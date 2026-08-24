@@ -1,0 +1,63 @@
+<template>
+  <article class="space-y-3">
+    <header class="flex items-baseline gap-4">
+      <span class="text-5xl font-medium leading-none">{{
+        props.kanji.kanji
+      }}</span>
+      <div class="flex flex-wrap gap-2 text-sm text-neutral-600">
+        <span v-if="props.kanji.stroke_count"
+          >{{ props.kanji.stroke_count }} strokes</span
+        >
+        <span v-if="props.kanji.jlpt != null"
+          >JLPT N{{ props.kanji.jlpt }}</span
+        >
+        <span v-if="props.kanji.grade != null"
+          >Grade {{ props.kanji.grade }}</span
+        >
+      </div>
+    </header>
+
+    <section v-if="props.kanji.meanings?.length">
+      <h3
+        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+      >
+        Meanings
+      </h3>
+      <p>{{ props.kanji.meanings.join(", ") }}</p>
+    </section>
+
+    <section v-if="props.kanji.on_readings?.length">
+      <h3
+        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+      >
+        On
+      </h3>
+      <p>{{ props.kanji.on_readings.join("、") }}</p>
+    </section>
+
+    <section v-if="props.kanji.kun_readings?.length">
+      <h3
+        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+      >
+        Kun
+      </h3>
+      <p>{{ props.kanji.kun_readings.join("、") }}</p>
+    </section>
+  </article>
+</template>
+
+<script setup lang="ts">
+export interface KanjiCardData {
+  kanji: string;
+  meanings?: string[];
+  kun_readings?: string[];
+  on_readings?: string[];
+  jlpt?: number | null;
+  grade?: number | null;
+  stroke_count?: number;
+}
+
+const props = defineProps<{
+  kanji: KanjiCardData;
+}>();
+</script>
