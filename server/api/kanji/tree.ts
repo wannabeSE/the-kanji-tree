@@ -7,6 +7,7 @@ import {
 
 /**
  * Collapsible hierarchy around ?root= (children start collapsed one level down).
+ * Each node includes its JLPT level when known.
  */
 export default defineEventHandler((event) => {
   const query = getQuery(event);

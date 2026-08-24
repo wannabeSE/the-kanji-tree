@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import * as d3 from "d3";
+import { isJlptLevel, jlptColors } from "~/utils/jlpt";
 
 export interface TreeNodePayload {
   id: string;
@@ -12,6 +13,7 @@ export interface TreeNodePayload {
   childCount: number;
   added: string[];
   addedLabels: string[];
+  jlpt: number | null;
   children: TreeNodePayload[];
 }
 
@@ -32,10 +34,31 @@ const emit = defineEmits<{
 }>();
 
 const host = ref<HTMLDivElement | null>(null);
-const NODE_W = 120;
-const NODE_H = 56;
-const VISIBLE_LIMIT = 10;
 const MORE_PREFIX = "__more__:";
+
+function layoutMetrics(width: number) {
+  const compact = width < 640;
+  return {
+    compact,
+    nodeW: compact ? 96 : 120,
+    nodeH: compact ? 48 : 56,
+    badgeW: compact ? 30 : 34,
+    badgeH: 20,
+    visibleLimit: compact ? 6 : 10,
+    kanjiSize: compact ? 28 : 34,
+    levelBase: compact ? 280 : 420,
+    levelPerFan: compact ? 18 : 28,
+    siblingPad: compact ? 24 : 32,
+  };
+}
+
+type LayoutMetrics = ReturnType<typeof layoutMetrics>;
+
+function badgeY(kind: LocalNode["kind"], metrics: LayoutMetrics) {
+  return kind === "radical"
+    ? metrics.nodeH - metrics.badgeH - 8
+    : (metrics.nodeH - metrics.badgeH) / 2;
+}
 
 type Point = { x: number; y: number };
 
@@ -54,20 +77,21 @@ function moreSentinel(parentId: string, remaining: number): LocalNode {
     childCount: 0,
     added: [],
     addedLabels: [],
+    jlpt: null,
     children: [],
     isMore: true,
     moreCount: remaining,
   };
 }
 
-function applyFanout(node: LocalNode) {
+function applyFanout(node: LocalNode, visibleLimit: number) {
   if (node.isMore) return;
 
   node.children = node.children.filter((child) => !child.isMore);
   const pool = [...node.children, ...(node.hiddenChildren ?? [])];
-  node.hiddenChildren = pool.slice(VISIBLE_LIMIT);
-  node.children = pool.slice(0, VISIBLE_LIMIT).map((child) => {
-    applyFanout(child);
+  node.hiddenChildren = pool.slice(visibleLimit);
+  node.children = pool.slice(0, visibleLimit).map((child) => {
+    applyFanout(child, visibleLimit);
     return child;
   });
 
@@ -76,12 +100,16 @@ function applyFanout(node: LocalNode) {
   }
 }
 
+function currentVisibleLimit() {
+  const width = host.value?.clientWidth || 800;
+  return layoutMetrics(width).visibleLimit;
+}
+
 function fanoutCount(node: LocalNode) {
   return node.children.filter((child) => !child.isMore).length;
 }
 
 let rootData = cloneTree(props.tree);
-applyFanout(rootData);
 let hasCentered = false;
 let zoomBehavior: d3.ZoomBehavior<SVGSVGElement, unknown> | null = null;
 let resizeObserver: ResizeObserver | null = null;
@@ -106,7 +134,7 @@ function revealMore(parentId: string) {
   const target = findNode(rootData, parentId);
   if (!target?.hiddenChildren?.length) return;
 
-  const batch = target.hiddenChildren.splice(0, VISIBLE_LIMIT);
+  const batch = target.hiddenChildren.splice(0, currentVisibleLimit());
   target.children = target.children.filter((child) => !child.isMore);
   target.children.push(...batch);
   if (target.hiddenChildren.length) {
@@ -125,7 +153,7 @@ async function toggleExpand(id: string) {
   } else {
     target.children = await loadChildren(id);
     target.hiddenChildren = [];
-    applyFanout(target);
+    applyFanout(target, currentVisibleLimit());
   }
   draw({ recenter: false });
 }
@@ -136,6 +164,18 @@ function draw(options: { recenter: boolean }) {
 
   const width = el.clientWidth || 800;
   const height = el.clientHeight || 600;
+  const metrics = layoutMetrics(width);
+  const {
+    nodeW,
+    nodeH,
+    badgeW,
+    badgeH,
+    kanjiSize,
+    levelBase,
+    levelPerFan,
+    siblingPad,
+  } = metrics;
+
   const previous = el.querySelector("svg") as SVGSVGElement | null;
   const priorTransform =
     previous && zoomBehavior ? d3.zoomTransform(previous) : null;
@@ -147,7 +187,8 @@ function draw(options: { recenter: boolean }) {
     .append("svg")
     .attr("width", width)
     .attr("height", height)
-    .attr("class", "block h-full w-full");
+    .attr("class", "block h-full w-full")
+    .style("touch-action", "none");
 
   const scene = svg.append("g");
 
@@ -161,13 +202,13 @@ function draw(options: { recenter: boolean }) {
   svg.call(zoomBehavior);
 
   const visibleFan = Math.max(fanoutCount(rootData), 1);
-  const levelGap = 420 + visibleFan * 28;
-  const siblingGap = NODE_H + 32;
+  const levelGap = levelBase + visibleFan * levelPerFan;
+  const siblingGap = nodeH + siblingPad;
 
   const hierarchy = d3.hierarchy(rootData, (d) => d.children);
   const treeLayout = d3
     .tree<LocalNode>()
-    .nodeSize([siblingGap, NODE_W + levelGap]);
+    .nodeSize([siblingGap, nodeW + levelGap]);
   const root = treeLayout(hierarchy);
 
   type LinkPts = { source: Point; target: Point };
@@ -189,8 +230,8 @@ function draw(options: { recenter: boolean }) {
     .join("path")
     .attr("d", (d) =>
       linkGen({
-        source: { x: d.source.x, y: d.source.y + NODE_W / 2 },
-        target: { x: d.target.x, y: d.target.y - NODE_W / 2 },
+        source: { x: d.source.x, y: d.source.y + nodeW / 2 },
+        target: { x: d.target.x, y: d.target.y - nodeW / 2 },
       }),
     );
 
@@ -199,11 +240,11 @@ function draw(options: { recenter: boolean }) {
     .selectAll("text")
     .data(links.filter((d) => d.target.data.addedLabels.length))
     .join("text")
-    .attr("x", (d) => (d.source.y + NODE_W / 2 + d.target.y - NODE_W / 2) / 2)
+    .attr("x", (d) => (d.source.y + nodeW / 2 + d.target.y - nodeW / 2) / 2)
     .attr("y", (d) => (d.source.x + d.target.x) / 2 - 6)
     .attr("text-anchor", "middle")
     .attr("fill", "#e8a0a0")
-    .attr("font-size", 13)
+    .attr("font-size", metrics.compact ? 11 : 13)
     .text((d) => `+${d.target.data.addedLabels.join("+")}`);
 
   const node = scene
@@ -213,7 +254,7 @@ function draw(options: { recenter: boolean }) {
     .join("g")
     .attr(
       "transform",
-      (d) => `translate(${d.y - NODE_W / 2},${d.x - NODE_H / 2})`,
+      (d) => `translate(${d.y - nodeW / 2},${d.x - nodeH / 2})`,
     )
     .style("cursor", "pointer")
     .on("click", (event, d) => {
@@ -227,8 +268,8 @@ function draw(options: { recenter: boolean }) {
 
   node
     .append("rect")
-    .attr("width", NODE_W)
-    .attr("height", NODE_H)
+    .attr("width", nodeW)
+    .attr("height", nodeH)
     .attr("rx", 12)
     .attr("ry", 12)
     .attr("fill", (d) => {
@@ -246,27 +287,64 @@ function draw(options: { recenter: boolean }) {
 
   node
     .append("text")
-    .attr("x", (d) => (d.data.isMore ? NODE_W / 2 : 16))
-    .attr("y", NODE_H / 2 + 11)
+    .attr("x", (d) => (d.data.isMore ? nodeW / 2 : 14))
+    .attr("y", nodeH / 2 + (metrics.compact ? 9 : 11))
     .attr("text-anchor", (d) => (d.data.isMore ? "middle" : "start"))
-    .attr("font-size", (d) => (d.data.isMore ? 18 : 34))
+    .attr("font-size", (d) => (d.data.isMore ? 16 : kanjiSize))
     .attr("fill", (d) => (d.data.isMore ? "#f3f3f3" : "#222"))
     .attr("font-family", (d) => (d.data.isMore ? "sans-serif" : "serif"))
     .text((d) => (d.data.isMore ? `+${d.data.moreCount}` : d.data.id));
 
+  const withLevel = node.filter(
+    (d) => isJlptLevel(d.data.jlpt) && !d.data.isMore,
+  );
+
+  withLevel
+    .append("rect")
+    .attr("x", 5)
+    .attr("y", 8)
+    .attr("width", 4)
+    .attr("height", nodeH - 16)
+    .attr("rx", 2)
+    .attr("fill", (d) => jlptColors(d.data.jlpt)!.accent)
+    .attr("pointer-events", "none");
+
+  withLevel
+    .append("rect")
+    .attr("x", nodeW - badgeW - 8)
+    .attr("y", (d) => badgeY(d.data.kind, metrics))
+    .attr("width", badgeW)
+    .attr("height", badgeH)
+    .attr("rx", 6)
+    .attr("ry", 6)
+    .attr("fill", (d) => jlptColors(d.data.jlpt)!.bg)
+    .attr("pointer-events", "none");
+
+  withLevel
+    .append("text")
+    .attr("x", nodeW - badgeW / 2 - 8)
+    .attr("y", (d) => badgeY(d.data.kind, metrics) + 14)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 11)
+    .attr("font-weight", 700)
+    .attr("font-family", "sans-serif")
+    .attr("fill", (d) => jlptColors(d.data.jlpt)!.fg)
+    .attr("pointer-events", "none")
+    .text((d) => `N${d.data.jlpt}`);
+
   node
     .filter((d) => d.data.kind === "radical" && !d.data.isMore)
     .append("circle")
-    .attr("cx", NODE_W - 18)
-    .attr("cy", 16)
-    .attr("r", 10)
+    .attr("cx", nodeW - 16)
+    .attr("cy", 14)
+    .attr("r", 9)
     .attr("fill", "#e7b8b2");
 
   node
     .filter((d) => d.data.kind === "radical" && !d.data.isMore)
     .append("text")
-    .attr("x", NODE_W - 18)
-    .attr("y", 20)
+    .attr("x", nodeW - 16)
+    .attr("y", 18)
     .attr("text-anchor", "middle")
     .attr("font-size", 9)
     .attr("fill", "#7a3f3a")
@@ -279,9 +357,9 @@ function draw(options: { recenter: boolean }) {
 
   expandable
     .append("circle")
-    .attr("cx", NODE_W)
-    .attr("cy", NODE_H / 2)
-    .attr("r", 9)
+    .attr("cx", nodeW)
+    .attr("cy", nodeH / 2)
+    .attr("r", metrics.compact ? 10 : 9)
     .attr("fill", "#e05a4f")
     .attr("stroke", "#fff")
     .attr("stroke-width", 1.5)
@@ -292,8 +370,8 @@ function draw(options: { recenter: boolean }) {
 
   expandable
     .append("text")
-    .attr("x", NODE_W)
-    .attr("y", NODE_H / 2 + 4)
+    .attr("x", nodeW)
+    .attr("y", nodeH / 2 + 4)
     .attr("text-anchor", "middle")
     .attr("font-size", 11)
     .attr("fill", "#fff")
@@ -304,9 +382,13 @@ function draw(options: { recenter: boolean }) {
     const minX = d3.min(root.descendants(), (d) => d.x) ?? 0;
     const maxX = d3.max(root.descendants(), (d) => d.x) ?? 0;
     const midX = (minX + maxX) / 2;
+    const startX = metrics.compact ? 28 : 56;
+    const startScale = metrics.compact ? 0.85 : 1;
     svg.call(
       zoomBehavior.transform,
-      d3.zoomIdentity.translate(56, height / 2 - midX).scale(1),
+      d3.zoomIdentity
+        .translate(startX, height / 2 - midX * startScale)
+        .scale(startScale),
     );
     hasCentered = true;
   } else {
@@ -318,7 +400,7 @@ watch(
   () => props.tree.id,
   () => {
     rootData = cloneTree(props.tree);
-    applyFanout(rootData);
+    applyFanout(rootData, currentVisibleLimit());
     hasCentered = false;
     draw({ recenter: true });
   },
@@ -330,6 +412,7 @@ watch(
 );
 
 onMounted(() => {
+  applyFanout(rootData, currentVisibleLimit());
   draw({ recenter: true });
   resizeObserver = new ResizeObserver(() => draw({ recenter: false }));
   if (host.value) resizeObserver.observe(host.value);

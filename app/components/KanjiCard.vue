@@ -8,7 +8,13 @@
         <span v-if="props.kanji.stroke_count"
           >{{ props.kanji.stroke_count }} strokes</span
         >
-        <span v-if="props.kanji.jlpt != null"
+        <span
+          v-if="props.kanji.jlpt != null"
+          class="rounded px-1.5 py-0.5 text-xs font-semibold"
+          :style="{
+            backgroundColor: jlptColors(props.kanji.jlpt)?.bg,
+            color: jlptColors(props.kanji.jlpt)?.fg,
+          }"
           >JLPT N{{ props.kanji.jlpt }}</span
         >
         <span v-if="props.kanji.grade != null"

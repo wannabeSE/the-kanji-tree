@@ -2,7 +2,7 @@
   <p class="flex flex-wrap items-center gap-1 text-2xl leading-none">
     <button
       type="button"
-      class="border px-2 py-1 transition hover:border-neutral-800"
+      class="cursor-pointer border px-2 py-1 transition hover:border-neutral-800"
       :class="
         props.highlight === 'parent'
           ? 'border-neutral-900 bg-neutral-100'
@@ -24,7 +24,7 @@
     <span class="px-1 text-neutral-400">→</span>
     <button
       type="button"
-      class="border px-2 py-1 transition hover:border-neutral-800"
+      class="cursor-pointer border px-2 py-1 transition hover:border-neutral-800"
       :class="
         props.highlight === 'child'
           ? 'border-neutral-900 bg-neutral-100'

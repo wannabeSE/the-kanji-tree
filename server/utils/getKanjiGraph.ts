@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import kanjiGraph from "../assets/kanji-graph.json";
 
 export interface KanjiGraphNode {
@@ -5,6 +7,14 @@ export interface KanjiGraphNode {
   children: string[];
   ids?: string | null;
   addedFrom?: Record<string, string[]>;
+}
+
+const jlptMap = JSON.parse(
+  readFileSync(join(process.cwd(), "server/assets/jlpt.json"), "utf-8"),
+) as Record<string, number>;
+
+export function getJlpt(char: string): number | null {
+  return jlptMap[char] ?? null;
 }
 
 export interface KanjiTransform {
@@ -82,15 +92,23 @@ export interface TreeNodePayload {
   childCount: number;
   added: string[];
   addedLabels: string[];
+  jlpt: number | null;
   children: TreeNodePayload[];
 }
 
 function sortChildren(parent: string, children: string[]): string[] {
   const preferred = new Set(["休", "林", "森", "本", "未", "末", "朱"]);
   return [...children].sort((a, b) => {
+    const jlptA = getJlpt(a);
+    const jlptB = getJlpt(b);
+    if (jlptA != null && jlptB != null && jlptA !== jlptB) return jlptB - jlptA;
+    if (jlptA != null && jlptB == null) return -1;
+    if (jlptA == null && jlptB != null) return 1;
+
     const prefA = preferred.has(a) ? 0 : 1;
     const prefB = preferred.has(b) ? 0 : 1;
     if (prefA !== prefB) return prefA - prefB;
+
     const addedA = getKanjiGraph(a).addedFrom?.[parent]?.length ?? 99;
     const addedB = getKanjiGraph(b).addedFrom?.[parent]?.length ?? 99;
     if (addedA !== addedB) return addedA - addedB;
@@ -117,6 +135,7 @@ export function buildTreeNode(
     childCount: node.children.length,
     added,
     addedLabels: added.map(formatAdded),
+    jlpt: getJlpt(char),
     children: sortChildren(char, node.children).map((child) => ({
       id: child,
       ids: getKanjiGraph(child).ids ?? null,
@@ -126,6 +145,7 @@ export function buildTreeNode(
       addedLabels: (getKanjiGraph(child).addedFrom?.[char] ?? []).map(
         formatAdded,
       ),
+      jlpt: getJlpt(child),
       children: [],
     })),
   };

@@ -1,16 +1,58 @@
 <template>
   <div
-    class="relative flex h-screen overflow-hidden bg-[#4e4e4e] text-neutral-100"
+    class="relative flex h-dvh flex-col overflow-hidden bg-[#4e4e4e] text-neutral-100 md:flex-row"
   >
-    <aside
-      class="flex w-52 shrink-0 flex-col gap-4 border-r border-black/20 bg-[#3f3f3f] p-4"
+    <!-- Mobile top bar -->
+    <header
+      class="flex shrink-0 items-center gap-3 border-b border-black/20 bg-[#3f3f3f] px-3 py-2.5 md:hidden"
     >
-      <h1 class="text-lg font-semibold tracking-tight">Kanji Tree</h1>
+      <button
+        type="button"
+        class="rounded border border-white/15 px-2.5 py-1.5 text-sm hover:bg-white/10"
+        aria-label="Open search menu"
+        @click="menuOpen = true"
+      >
+        Menu
+      </button>
+      <h1 class="truncate text-base font-semibold tracking-tight">
+        Kanji Tree
+      </h1>
+      <p class="ml-auto shrink-0 text-xs text-neutral-400">
+        {{ root }}
+      </p>
+    </header>
+
+    <!-- Mobile menu backdrop -->
+    <button
+      v-if="menuOpen"
+      type="button"
+      class="absolute inset-0 z-30 bg-black/50 md:hidden"
+      aria-label="Close search menu"
+      @click="menuOpen = false"
+    />
+
+    <!-- Search / stats panel: drawer on mobile, sidebar on desktop -->
+    <aside
+      class="absolute inset-y-0 left-0 z-40 flex h-full w-[min(18rem,85vw)] shrink-0 flex-col gap-4 border-r border-black/20 bg-[#3f3f3f] p-4 transition-transform duration-200 md:static md:z-auto md:h-auto md:w-52 md:translate-x-0 md:transition-none"
+      :class="menuOpen ? 'translate-x-0' : '-translate-x-full'"
+    >
+      <div class="flex items-center justify-between gap-2 md:block">
+        <h1 class="text-lg font-semibold tracking-tight">Kanji Tree</h1>
+        <button
+          type="button"
+          class="rounded px-2 py-1 text-xl leading-none text-neutral-400 hover:bg-white/10 md:hidden"
+          aria-label="Close search menu"
+          @click="menuOpen = false"
+        >
+          ×
+        </button>
+      </div>
 
       <form class="space-y-2" @submit.prevent="onSearch">
         <input
           v-model="q"
           type="search"
+          enterkeyhint="search"
           placeholder="Enter Kanji…"
           class="w-full rounded border border-white/15 bg-[#2f2f2f] px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-white/40"
         />
@@ -53,9 +95,30 @@
         <p>Radicals: {{ tree?.stats.radicals ?? "—" }}</p>
       </div>
 
+      <div class="space-y-1.5">
+        <p
+          class="text-[10px] font-semibold uppercase tracking-wide text-neutral-500"
+        >
+          JLPT
+        </p>
+        <div class="flex flex-wrap gap-1">
+          <span
+            v-for="level in JLPT_SCALE"
+            :key="level"
+            class="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+            :style="{
+              backgroundColor: jlptColors(level)?.bg,
+              color: jlptColors(level)?.fg,
+            }"
+          >
+            N{{ level }}
+          </span>
+        </div>
+      </div>
+
       <p class="mt-auto text-xs leading-relaxed text-neutral-400">
-        Drag to pan. Scroll to zoom. Click a node for details. Red arrow expands
-        children.
+        Drag to pan. Pinch or scroll to zoom. Tap a node for details. Red arrow
+        expands children.
       </p>
     </aside>
 
@@ -66,7 +129,7 @@
       >
         Loading graph…
       </p>
-      <div class="absolute inset-0">
+      <div class="absolute inset-0 touch-none">
         <ClientOnly>
           <KanjiGraph
             v-if="tree?.tree"
@@ -78,21 +141,41 @@
       </div>
     </main>
 
+    <!-- Details backdrop (mobile) -->
+    <button
+      v-if="panelOpen && selected"
+      type="button"
+      class="absolute inset-0 z-20 bg-black/40 md:hidden"
+      aria-label="Close details"
+      @click="panelOpen = false"
+    />
+
+    <!-- Details: bottom sheet on mobile, right panel on desktop -->
     <aside
       v-if="panelOpen && selected"
-      class="absolute right-0 top-0 z-10 flex h-full w-80 max-w-[45vw] shrink-0 flex-col overflow-y-auto border-l border-black/10 bg-[#ececec] text-neutral-900 shadow-xl"
+      class="absolute inset-x-0 bottom-0 z-30 flex max-h-[78dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-black/10 bg-[#ececec] text-neutral-900 shadow-xl md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-80 md:max-w-[45vw] md:rounded-none md:border-l md:border-y-0 md:border-r-0"
     >
-      <div class="space-y-4 p-5">
+      <div
+        class="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-neutral-300 md:hidden"
+        aria-hidden="true"
+      />
+      <div
+        class="space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+      >
         <div class="flex items-start justify-between gap-3">
           <p
             v-if="selected.jlpt != null"
-            class="rounded bg-neutral-800 px-2 py-0.5 text-xs text-white"
+            class="rounded px-2 py-0.5 text-xs font-semibold"
+            :style="{
+              backgroundColor: jlptColors(selected.jlpt)?.bg,
+              color: jlptColors(selected.jlpt)?.fg,
+            }"
           >
             N{{ selected.jlpt }}
           </p>
           <button
             type="button"
-            class="ml-auto text-neutral-500"
+            class="ml-auto grid h-8 w-8 place-items-center rounded text-xl leading-none text-neutral-500 hover:bg-black/5"
             aria-label="Close details"
             @click="panelOpen = false"
           >
@@ -131,7 +214,7 @@
           >
             Add a component
           </h2>
-          <div class="max-h-64 space-y-2 overflow-y-auto">
+          <div class="max-h-48 space-y-2 overflow-y-auto md:max-h-64">
             <KanjiFormula
               v-for="transform in toChildren.slice(0, 12)"
               :key="transform.formula"
@@ -151,10 +234,21 @@
 </template>
 
 <script setup lang="ts">
+useHead({
+  meta: [
+    {
+      name: "viewport",
+      content:
+        "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
+    },
+  ],
+});
+
 const q = ref("");
 const root = ref("木");
 const selectedId = ref("木");
 const panelOpen = ref(false);
+const menuOpen = ref(false);
 
 const { data: tree, status: treeStatus } = await useFetch("/api/kanji/tree", {
   query: computed(() => ({ root: root.value || undefined })),
@@ -183,12 +277,14 @@ function onSearch() {
 function selectKanji(id: string) {
   selectedId.value = id;
   panelOpen.value = true;
+  menuOpen.value = false;
 }
 
 function setRoot(id: string) {
   root.value = id;
   selectedId.value = id;
   panelOpen.value = true;
+  menuOpen.value = false;
 }
 
 const fromParents = computed(() => selected.value?.fromParents ?? []);

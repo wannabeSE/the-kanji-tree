@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+html,
+body,
+#__nuxt {
+  height: 100%;
+  overflow: hidden;
+}
+
 .kanji-canvas {
   background-color: #5a5a5a;
   background-image:

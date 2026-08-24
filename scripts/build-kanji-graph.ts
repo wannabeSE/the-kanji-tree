@@ -12,6 +12,8 @@ import { KANJI_OVERIDES } from "./kanji-overrides";
 const IDS_URL =
   "https://gitlab.chise.org/CHISE/ids/-/raw/master/IDS-UCS-Basic.txt";
 const JOYO_URL = "https://kanjiapi.dev/v1/kanji/joyo";
+const JLPT_URL = (level: number) =>
+  `https://kanjiapi.dev/v1/kanji/jlpt-${level}`;
 
 const IDC_MIN = 0x2ff0;
 const IDC_MAX = 0x2fff;
@@ -117,6 +119,30 @@ async function buildKanjiGraph() {
   mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, `${JSON.stringify(graph, null, 2)}\n`, "utf-8");
   console.log(`Successfully generated Kanji graph at ${outputPath}`);
+
+  await buildJlptMap();
+}
+
+async function buildJlptMap() {
+  console.log("Fetching JLPT kanji lists...");
+  const mapping: Record<string, number> = {};
+
+  const lists = await Promise.all(
+    [1, 2, 3, 4, 5].map(async (level) => ({
+      level,
+      chars: await $fetch<string[]>(JLPT_URL(level)),
+    })),
+  );
+
+  for (const { level, chars } of lists) {
+    for (const char of chars) mapping[char] = level;
+  }
+
+  const outputPath = resolve(process.cwd(), "server/assets/jlpt.json");
+  writeFileSync(outputPath, `${JSON.stringify(mapping)}\n`, "utf-8");
+  console.log(
+    `Successfully generated JLPT map (${Object.keys(mapping).length} kanji) at ${outputPath}`,
+  );
 }
 
 buildKanjiGraph().catch((err) => {
