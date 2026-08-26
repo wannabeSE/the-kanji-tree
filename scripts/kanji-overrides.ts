@@ -1,5 +1,5 @@
 /**
- * Manual parent → child links for atomic kanji CHISE IDS does not decompose,
+ * Manual parent → child links for atomic kanji CJKVI IDS does not decompose,
  * plus the extra stroke/component that produces the child.
  */
 export interface KanjiOverride {

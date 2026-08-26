@@ -23,6 +23,25 @@
       </div>
     </header>
 
+    <section v-if="props.kanji.freq_mainichi_shinbun != null" class="space-y-1">
+      <h3
+        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+      >
+        Newspaper frequency
+      </h3>
+      <p class="text-sm">
+        Rank
+        <span class="font-semibold text-neutral-800">{{
+          props.kanji.freq_mainichi_shinbun
+        }}</span>
+        <span class="text-neutral-500"> / 2501</span>
+      </p>
+      <p class="text-xs leading-relaxed text-neutral-500">
+        Lower rank means more common (1 = most frequent). Un-ranked kanji are
+        outside the top 2501.
+      </p>
+    </section>
+
     <section v-if="props.kanji.meanings?.length">
       <h3
         class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
@@ -61,6 +80,7 @@ export interface KanjiCardData {
   jlpt?: number | null;
   grade?: number | null;
   stroke_count?: number;
+  freq_mainichi_shinbun?: number | null;
 }
 
 const props = defineProps<{

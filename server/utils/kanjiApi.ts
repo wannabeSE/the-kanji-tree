@@ -14,6 +14,8 @@ export interface KanjiApiEntry {
   on_readings: string[];
   name_readings: string[];
   jlpt: number | null;
+  /** Mainichi Shinbun rank 1–2501; lower = more common. */
+  freq_mainichi_shinbun?: number | null;
   unicode: string;
   heisig_en?: string;
 }

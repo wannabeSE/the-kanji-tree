@@ -6,20 +6,33 @@
     <header
       class="flex shrink-0 items-center gap-3 border-b border-black/20 bg-[#3f3f3f] px-3 py-2.5 md:hidden"
     >
-      <button
-        type="button"
-        class="rounded border border-white/15 px-2.5 py-1.5 text-sm hover:bg-white/10"
-        aria-label="Open search menu"
-        @click="menuOpen = true"
-      >
-        Menu
-      </button>
       <h1 class="truncate text-base font-semibold tracking-tight">
         Kanji Tree
       </h1>
-      <p class="ml-auto shrink-0 text-xs text-neutral-400">
+      <p class="shrink-0 text-xs text-neutral-400">
         {{ root }}
       </p>
+      <button
+        type="button"
+        class="ml-auto rounded border border-white/15 p-2 hover:bg-white/10"
+        aria-label="Open search menu"
+        @click="menuOpen = true"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-4"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+      </button>
     </header>
 
     <!-- Mobile menu backdrop -->
@@ -33,8 +46,8 @@
 
     <!-- Search / stats panel: drawer on mobile, sidebar on desktop -->
     <aside
-      class="absolute inset-y-0 left-0 z-40 flex h-full w-[min(18rem,85vw)] shrink-0 flex-col gap-4 border-r border-black/20 bg-[#3f3f3f] p-4 transition-transform duration-200 md:static md:z-auto md:h-auto md:w-52 md:translate-x-0 md:transition-none"
-      :class="menuOpen ? 'translate-x-0' : '-translate-x-full'"
+      class="absolute inset-y-0 right-0 z-40 flex h-full w-[min(18rem,85vw)] shrink-0 flex-col gap-4 border-l border-black/20 bg-[#3f3f3f] p-4 transition-transform duration-200 md:static md:z-auto md:h-auto md:w-52 md:translate-x-0 md:border-l-0 md:border-r md:transition-none"
+      :class="menuOpen ? 'translate-x-0' : 'translate-x-full'"
     >
       <div class="flex items-center justify-between gap-2 md:block">
         <h1 class="text-lg font-semibold tracking-tight">Kanji Tree</h1>

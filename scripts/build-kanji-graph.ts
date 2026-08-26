@@ -1,5 +1,5 @@
 /**
- * Fetches CHISE IDS + Joyo kanji and writes parent/child graph JSON.
+ * Fetches CJKVI IDS + Joyo kanji and writes parent/child graph JSON.
  *
  * Usage: npm run build:kanji-graph
  */
@@ -10,14 +10,15 @@ import { ofetch as $fetch } from "ofetch";
 import { KANJI_OVERIDES } from "./kanji-overrides";
 
 const IDS_URL =
-  "https://gitlab.chise.org/CHISE/ids/-/raw/master/IDS-UCS-Basic.txt";
+  "https://raw.githubusercontent.com/cjkvi/cjkvi-ids/master/ids.txt";
 const JOYO_URL = "https://kanjiapi.dev/v1/kanji/joyo";
 const JLPT_URL = (level: number) =>
   `https://kanjiapi.dev/v1/kanji/jlpt-${level}`;
 
 const IDC_MIN = 0x2ff0;
 const IDC_MAX = 0x2fff;
-const CDP_ENTITY = /&[^;]+;/g;
+/** CJKVI source-region tags, e.g. [J], [GTKV]. */
+const SOURCE_TAG = /\[[A-Z]+\]/g;
 
 /** Used as parents they flood the graph; still allowed as the "added" stroke. */
 const STROKE_PRIMITIVES = new Set(["一", "丨", "丶", "丿", "乙", "亅"]);
@@ -34,9 +35,13 @@ function isIdeographicDescriptionChar(code: number): boolean {
   return code >= IDC_MIN && code <= IDC_MAX;
 }
 
+function cleanIds(ids: string): string {
+  return ids.replace(SOURCE_TAG, "").trim();
+}
+
 /** Glyphs in an IDS string, including radicals; keeps duplicates (林 = 木+木). */
 function extractGlyphs(ids: string): string[] {
-  const stripped = ids.replace(CDP_ENTITY, "");
+  const stripped = cleanIds(ids);
   const glyphs: string[] = [];
   for (const char of stripped) {
     const code = char.codePointAt(0);
@@ -60,7 +65,7 @@ async function buildKanjiGraph() {
   const joyoList = await $fetch<string[]>(JOYO_URL);
   const joyoSet = new Set(joyoList);
 
-  console.log("Fetching CHISE IDS dataset...");
+  console.log("Fetching CJKVI IDS dataset...");
   const idsRaw = await $fetch<string>(IDS_URL);
 
   const graph: Record<string, GraphNode> = {};
@@ -89,7 +94,7 @@ async function buildKanjiGraph() {
     if (parts.length < 3) continue;
 
     const char = parts[1];
-    const idsSequence = parts[2];
+    const idsSequence = parts[2] ? cleanIds(parts[2]) : "";
     if (!char || !idsSequence || !joyoSet.has(char)) continue;
 
     const node = graph[char];
