@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import kanjiGraph from "../assets/kanji-graph.json";
+import jlptMap from "../assets/jlpt.json";
 
 export interface KanjiGraphNode {
   parents: string[];
@@ -9,12 +8,8 @@ export interface KanjiGraphNode {
   addedFrom?: Record<string, string[]>;
 }
 
-const jlptMap = JSON.parse(
-  readFileSync(join(process.cwd(), "server/assets/jlpt.json"), "utf-8"),
-) as Record<string, number>;
-
 export function getJlpt(char: string): number | null {
-  return jlptMap[char] ?? null;
+  return (jlptMap as Record<string, number>)[char] ?? null;
 }
 
 export interface KanjiTransform {
@@ -154,16 +149,10 @@ export function buildTreeNode(
 export function graphStats() {
   const chars = Object.keys(graph);
   let radicals = 0;
-  let withChildren = 0;
   for (const char of chars) {
     const node = graph[char];
     if (!node) continue;
-    if (node.children.length) withChildren++;
     if (!node.parents.length && node.children.length) radicals++;
   }
-  return {
-    total: chars.length,
-    withChildren,
-    radicals,
-  };
+  return { total: chars.length, radicals };
 }

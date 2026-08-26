@@ -1,48 +1,40 @@
 /**
- * Filtering & query endpoint.
- * Query params: q (text), minStrokes, maxStrokes, component
+ * Query params: q (kanji character or reading)
  */
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const q = typeof query.q === "string" ? query.q.trim() : "";
-  const minStrokes = query.minStrokes != null ? Number(query.minStrokes) : null;
-  const maxStrokes = query.maxStrokes != null ? Number(query.maxStrokes) : null;
-  const component =
-    typeof query.component === "string" ? query.component : null;
+  const qRaw = getQuery(event).q;
+  const q = typeof qRaw === "string" ? qRaw.trim() : "";
 
   let hits = searchKanjiGraph(q);
 
-  if (component) {
-    hits = (q ? hits : searchKanjiGraph(component)).filter((kanji) => {
-      const { parents, children } = getKanjiGraph(kanji);
-      return (
-        kanji === component ||
-        parents.includes(component) ||
-        children.includes(component)
-      );
-    });
-  }
-
-  let results = hits.map((kanji) => {
-    const { parents, children } = getKanjiGraph(kanji);
-    return { kanji, parents, children };
-  });
-
-  if (q && !results.length) {
+  if (q && !hits.length) {
     try {
-      const remote = await searchKanji(q);
-      results = remote.map((kanji) => ({
-        kanji,
-        ...getKanjiGraph(kanji),
-      }));
+      hits = await searchByReadingOrChar(q);
     } catch {
-      results = [];
+      hits = [];
     }
   }
 
   return {
-    query: { q, minStrokes, maxStrokes, component },
-    count: results.length,
-    results,
+    query: { q },
+    count: hits.length,
+    results: hits.map((kanji) => ({ kanji })),
   };
 });
+
+async function searchByReadingOrChar(q: string): Promise<string[]> {
+  if ([...q].length === 1) {
+    const entry = await $fetch<{ kanji?: string }>(
+      `https://kanjiapi.dev/v1/kanji/${encodeURIComponent(q)}`,
+    );
+    return entry?.kanji ? [entry.kanji] : [];
+  }
+
+  const reading = await $fetch<{
+    main_kanji?: string[];
+    name_kanji?: string[];
+  }>(`https://kanjiapi.dev/v1/reading/${encodeURIComponent(q)}`);
+  return [
+    ...new Set([...(reading.main_kanji ?? []), ...(reading.name_kanji ?? [])]),
+  ];
+}

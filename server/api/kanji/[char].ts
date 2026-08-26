@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
 
   const decoded = decodeURIComponent(char);
   const storage = useStorage("cache");
-  const cacheKey = `kanji:v4:${decoded}`;
+  const cacheKey = `kanji:v5:${decoded}`;
 
   if (await storage.hasItem(cacheKey)) {
     return await storage.getItem(cacheKey);
@@ -18,14 +18,10 @@ export default defineEventHandler(async (event) => {
   if (!apiData)
     throw createError({ statusCode: 404, statusMessage: "Kanji not found" });
 
-  const node = getKanjiGraph(decoded);
   const { fromParents, toChildren } = getTransforms(decoded);
 
   const payload = {
     ...apiData,
-    ids: node.ids ?? null,
-    parents: node.parents,
-    children: node.children,
     fromParents,
     toChildren,
   };

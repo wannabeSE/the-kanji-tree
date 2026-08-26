@@ -175,20 +175,10 @@
       <div
         class="space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
       >
-        <div class="flex items-start justify-between gap-3">
-          <p
-            v-if="selected.jlpt != null"
-            class="rounded px-2 py-0.5 text-xs font-semibold"
-            :style="{
-              backgroundColor: jlptColors(selected.jlpt)?.bg,
-              color: jlptColors(selected.jlpt)?.fg,
-            }"
-          >
-            N{{ selected.jlpt }}
-          </p>
+        <div class="flex justify-end">
           <button
             type="button"
-            class="ml-auto grid h-8 w-8 place-items-center rounded text-xl leading-none text-neutral-500 hover:bg-black/5"
+            class="grid h-8 w-8 place-items-center rounded text-xl leading-none text-neutral-500 hover:bg-black/5"
             aria-label="Close details"
             @click="panelOpen = false"
           >
@@ -247,6 +237,14 @@
 </template>
 
 <script setup lang="ts">
+import type { KanjiCardData } from "~/components/KanjiCard.vue";
+import type { KanjiFormulaProps } from "~/components/KanjiFormula.vue";
+
+type SelectedKanji = KanjiCardData & {
+  fromParents?: KanjiFormulaProps[];
+  toChildren?: KanjiFormulaProps[];
+};
+
 useHead({
   meta: [
     {
@@ -278,10 +276,11 @@ const {
   watch: false,
 });
 
-const { data: selected, status: selectedStatus } = await useFetch(
-  () => `/api/kanji/${encodeURIComponent(selectedId.value)}`,
-  { watch: [selectedId] },
-);
+const { data: selected, status: selectedStatus } =
+  await useFetch<SelectedKanji>(
+    () => `/api/kanji/${encodeURIComponent(selectedId.value)}`,
+    { watch: [selectedId] },
+  );
 
 function onSearch() {
   if (q.value.trim()) runSearch();
