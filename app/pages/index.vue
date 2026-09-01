@@ -190,9 +190,24 @@
 
         <button
           type="button"
-          class="text-xs text-neutral-500 underline"
+          class="flex w-full items-center justify-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-neutral-800 active:bg-neutral-950"
           @click="setRoot(selected.kanji)"
         >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="size-4 shrink-0"
+            aria-hidden="true"
+          >
+            <path d="M12 22V8" />
+            <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
+            <circle cx="12" cy="5" r="3" />
+          </svg>
           Use as root
         </button>
 
