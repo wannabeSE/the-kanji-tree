@@ -4,7 +4,7 @@
       <span class="text-5xl font-medium leading-none">{{
         props.kanji.kanji
       }}</span>
-      <div class="flex flex-wrap gap-2 text-sm text-neutral-600">
+      <div class="flex flex-wrap gap-2 text-sm text-neutral-400">
         <span v-if="props.kanji.stroke_count"
           >{{ props.kanji.stroke_count }} strokes</span
         >
@@ -25,13 +25,13 @@
 
     <section v-if="props.kanji.freq_mainichi_shinbun != null" class="space-y-1">
       <h3
-        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+        class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
       >
         Newspaper frequency
       </h3>
       <p class="text-sm">
         Rank
-        <span class="font-semibold text-neutral-800">{{
+        <span class="font-semibold text-white">{{
           props.kanji.freq_mainichi_shinbun
         }}</span>
         <span class="text-neutral-500"> / 2501</span>
@@ -44,7 +44,7 @@
 
     <section v-if="props.kanji.meanings?.length">
       <h3
-        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+        class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
       >
         Meanings
       </h3>
@@ -53,7 +53,7 @@
 
     <section v-if="props.kanji.on_readings?.length">
       <h3
-        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+        class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
       >
         On
       </h3>
@@ -62,7 +62,7 @@
 
     <section v-if="props.kanji.kun_readings?.length">
       <h3
-        class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+        class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
       >
         Kun
       </h3>

@@ -4,13 +4,14 @@ html,
 body,
 #__nuxt {
   height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
 .kanji-canvas {
-  background-color: #5a5a5a;
+  background-color: #1c1c1e;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 28px 28px;
 }

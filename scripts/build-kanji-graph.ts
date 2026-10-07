@@ -7,6 +7,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { ofetch as $fetch } from "ofetch";
+import { buildFreqMap } from "./build-freq";
 import { KANJI_OVERIDES } from "./kanji-overrides";
 
 const IDS_URL =
@@ -126,6 +127,7 @@ async function buildKanjiGraph() {
   console.log(`Successfully generated Kanji graph at ${outputPath}`);
 
   await buildJlptMap();
+  await buildFreqMap(joyoList);
 }
 
 async function buildJlptMap() {

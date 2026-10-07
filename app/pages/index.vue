@@ -1,41 +1,5 @@
 <template>
-  <div
-    class="relative flex h-dvh flex-col overflow-hidden bg-[#4e4e4e] text-neutral-100 md:flex-row"
-  >
-    <!-- Mobile top bar -->
-    <header
-      class="flex shrink-0 items-center gap-3 border-b border-black/20 bg-[#3f3f3f] px-3 py-2.5 md:hidden"
-    >
-      <h1 class="truncate text-base font-semibold tracking-tight">
-        Kanji Tree
-      </h1>
-      <p class="shrink-0 text-xs text-neutral-400">
-        {{ root }}
-      </p>
-      <button
-        type="button"
-        class="ml-auto rounded border border-white/15 p-2 hover:bg-white/10"
-        aria-label="Open search menu"
-        @click="menuOpen = true"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="size-4"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
-      </button>
-    </header>
-
-    <!-- Mobile menu backdrop -->
+  <div class="relative flex h-full min-h-0 flex-col md:flex-row">
     <button
       v-if="menuOpen"
       type="button"
@@ -44,16 +8,19 @@
       @click="menuOpen = false"
     />
 
-    <!-- Search / stats panel: drawer on mobile, sidebar on desktop -->
     <aside
-      class="absolute inset-y-0 right-0 z-40 flex h-full w-[min(18rem,85vw)] shrink-0 flex-col gap-4 border-l border-black/20 bg-[#3f3f3f] p-4 transition-transform duration-200 md:static md:z-auto md:h-auto md:w-52 md:translate-x-0 md:border-l-0 md:border-r md:transition-none"
+      class="absolute inset-y-0 right-0 z-40 flex h-full w-[min(18rem,85vw)] shrink-0 flex-col gap-5 border-l border-white/10 bg-[#1c1c1e] p-4 transition-transform duration-200 md:static md:z-auto md:h-auto md:w-56 md:translate-x-0 md:border-l-0 md:border-r md:pt-6 md:transition-none"
       :class="menuOpen ? 'translate-x-0' : 'translate-x-full'"
     >
-      <div class="flex items-center justify-between gap-2 md:block">
-        <h1 class="text-lg font-semibold tracking-tight">Kanji Tree</h1>
+      <div class="flex items-center justify-between gap-2 md:hidden">
+        <p
+          class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
+        >
+          Search
+        </p>
         <button
           type="button"
-          class="rounded px-2 py-1 text-xl leading-none text-neutral-400 hover:bg-white/10 md:hidden"
+          class="rounded-full px-2 py-1 text-xl leading-none text-neutral-400 hover:bg-white/10"
           aria-label="Close search menu"
           @click="menuOpen = false"
         >
@@ -67,34 +34,34 @@
           type="search"
           enterkeyhint="search"
           placeholder="Enter Kanji…"
-          class="w-full rounded border border-white/15 bg-[#2f2f2f] px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-white/40"
+          class="w-full rounded-full bg-white/5 px-4 py-2 text-sm outline-none ring-1 ring-white/10 placeholder:text-neutral-500 focus:ring-white/25"
         />
         <button
           type="submit"
-          class="w-full rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/15 disabled:opacity-50"
-          :disabled="searchStatus === 'pending'"
+          class="w-full rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-200 disabled:opacity-50"
+          :disabled="searchStatus === 'pending' || !q.trim()"
         >
           Search
         </button>
       </form>
 
-      <p v-if="searchStatus === 'pending'" class="text-xs text-neutral-400">
+      <p v-if="searchStatus === 'pending'" class="text-sm text-neutral-500">
         Searching…
       </p>
       <p
         v-else-if="searchResults && !searchResults.results.length"
-        class="text-xs text-neutral-400"
+        class="text-sm text-neutral-500"
       >
         No results for “{{ searchResults.query.q }}”.
       </p>
       <ul
         v-else-if="searchResults?.results?.length"
-        class="flex flex-wrap gap-1"
+        class="flex flex-wrap gap-2"
       >
         <li v-for="item in searchResults.results" :key="item.kanji">
           <button
             type="button"
-            class="rounded bg-white px-2 py-0.5 text-xl text-neutral-900"
+            class="flex size-11 items-center justify-center rounded-2xl bg-[#2c2c2e] text-xl ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#3a3a3c] hover:ring-white/25"
             @click="setRoot(item.kanji)"
           >
             {{ item.kanji }}
@@ -102,15 +69,22 @@
         </li>
       </ul>
 
-      <div class="space-y-1 text-sm text-neutral-300">
-        <p>Branch: {{ tree?.stats.branch ?? "—" }}</p>
-        <p>Total: {{ tree?.stats.total ?? "—" }}</p>
-        <p>Radicals: {{ tree?.stats.radicals ?? "—" }}</p>
+      <div class="space-y-2">
+        <p
+          class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
+        >
+          Graph
+        </p>
+        <div class="space-y-1 text-sm text-neutral-400">
+          <p>Branch: {{ tree?.stats.branch ?? "—" }}</p>
+          <p>Total: {{ tree?.stats.total ?? "—" }}</p>
+          <p>Radicals: {{ tree?.stats.radicals ?? "—" }}</p>
+        </div>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <p
-          class="text-[10px] font-semibold uppercase tracking-wide text-neutral-500"
+          class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
         >
           JLPT
         </p>
@@ -118,7 +92,7 @@
           <span
             v-for="level in JLPT_SCALE"
             :key="level"
-            class="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+            class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
             :style="{
               backgroundColor: jlptColors(level)?.bg,
               color: jlptColors(level)?.fg,
@@ -129,7 +103,7 @@
         </div>
       </div>
 
-      <p class="mt-auto text-xs leading-relaxed text-neutral-400">
+      <p class="mt-auto text-xs leading-relaxed text-neutral-500">
         Drag to pan. Pinch or scroll to zoom. Tap a node for details. Red arrow
         expands children.
       </p>
@@ -138,7 +112,7 @@
     <main class="relative min-h-0 min-w-0 flex-1">
       <p
         v-if="treeStatus === 'pending'"
-        class="absolute inset-0 grid place-items-center text-sm text-neutral-300"
+        class="absolute inset-0 grid place-items-center text-sm text-neutral-500"
       >
         Loading graph…
       </p>
@@ -154,7 +128,6 @@
       </div>
     </main>
 
-    <!-- Details backdrop (mobile) -->
     <button
       v-if="panelOpen && selected"
       type="button"
@@ -163,13 +136,12 @@
       @click="panelOpen = false"
     />
 
-    <!-- Details: bottom sheet on mobile, right panel on desktop -->
     <aside
       v-if="panelOpen && selected"
-      class="absolute inset-x-0 bottom-0 z-30 flex max-h-[78dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-black/10 bg-[#ececec] text-neutral-900 shadow-xl md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-80 md:max-w-[45vw] md:rounded-none md:border-l md:border-y-0 md:border-r-0"
+      class="absolute inset-x-0 bottom-0 z-30 flex max-h-[78dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-[#2c2c2e] text-neutral-100 shadow-xl md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-80 md:max-w-[45vw] md:rounded-none md:border-l md:border-y-0 md:border-r-0"
     >
       <div
-        class="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-neutral-300 md:hidden"
+        class="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-white/20 md:hidden"
         aria-hidden="true"
       />
       <div
@@ -178,7 +150,7 @@
         <div class="flex justify-end">
           <button
             type="button"
-            class="grid h-8 w-8 place-items-center rounded text-xl leading-none text-neutral-500 hover:bg-black/5"
+            class="grid h-8 w-8 place-items-center rounded-full text-xl leading-none text-neutral-400 hover:bg-white/10"
             aria-label="Close details"
             @click="panelOpen = false"
           >
@@ -190,7 +162,7 @@
 
         <button
           type="button"
-          class="flex w-full items-center justify-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-neutral-800 active:bg-neutral-950"
+          class="flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-200"
           @click="setRoot(selected.kanji)"
         >
           <svg
@@ -213,7 +185,7 @@
 
         <section v-if="fromParents.length" class="space-y-2">
           <h2
-            class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+            class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
           >
             How it is formed
           </h2>
@@ -228,7 +200,7 @@
 
         <section v-if="toChildren.length" class="space-y-2">
           <h2
-            class="text-xs font-semibold uppercase tracking-wide text-neutral-500"
+            class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
           >
             Add a component
           </h2>
@@ -270,11 +242,38 @@ useHead({
   ],
 });
 
+const route = useRoute();
+
+function rootFromQuery() {
+  const value = route.query.root;
+  return typeof value === "string" && value ? value : "木";
+}
+
 const q = ref("");
-const root = ref("木");
-const selectedId = ref("木");
+const root = ref(rootFromQuery());
+const selectedId = ref(root.value);
 const panelOpen = ref(false);
-const menuOpen = ref(false);
+const { rootLabel, menuOpen } = useExplorerHeader();
+
+rootLabel.value = root.value;
+watch(root, (value) => {
+  rootLabel.value = value;
+});
+onBeforeUnmount(() => {
+  rootLabel.value = null;
+  menuOpen.value = false;
+});
+
+watch(
+  () => route.query.root,
+  (value) => {
+    if (typeof value === "string" && value && value !== root.value) {
+      root.value = value;
+      selectedId.value = value;
+      panelOpen.value = true;
+    }
+  },
+);
 
 const { data: tree, status: treeStatus } = await useFetch("/api/kanji/tree", {
   query: computed(() => ({ root: root.value || undefined })),
@@ -286,7 +285,7 @@ const {
   execute: runSearch,
   status: searchStatus,
 } = await useFetch("/api/search", {
-  query: computed(() => ({ q: q.value })),
+  query: computed(() => ({ q: q.value || undefined })),
   immediate: false,
   watch: false,
 });

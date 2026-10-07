@@ -1,5 +1,6 @@
 import kanjiGraph from "../assets/kanji-graph.json";
 import jlptMap from "../assets/jlpt.json";
+import freqMap from "../assets/freq.json";
 
 export interface KanjiGraphNode {
   parents: string[];
@@ -10,6 +11,32 @@ export interface KanjiGraphNode {
 
 export function getJlpt(char: string): number | null {
   return (jlptMap as Record<string, number>)[char] ?? null;
+}
+
+export function getFreq(char: string): number | null {
+  return (freqMap as Record<string, number>)[char] ?? null;
+}
+
+/** Lower rank = more common. Unranked kanji are excluded. */
+export function filterByFreq(
+  chars: string[],
+  minFreq?: number | null,
+  maxFreq?: number | null,
+): string[] {
+  if (minFreq == null && maxFreq == null) return chars;
+  return chars
+    .filter((char) => {
+      const freq = getFreq(char);
+      if (freq == null) return false;
+      if (minFreq != null && freq < minFreq) return false;
+      if (maxFreq != null && freq > maxFreq) return false;
+      return true;
+    })
+    .sort((a, b) => (getFreq(a) ?? 9999) - (getFreq(b) ?? 9999));
+}
+
+export function allKanji(): string[] {
+  return Object.keys(kanjiGraph as KanjiGraph);
 }
 
 export interface KanjiTransform {

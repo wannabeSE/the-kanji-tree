@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "build:kanji-graph": "tsx scripts/build-kanji-graph.ts"
+    "build:kanji-graph": "tsx scripts/build-kanji-graph.ts",
+    "build:freq": "tsx scripts/build-freq.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",
+    "@types/node": "^24.13.4",
     "tsx": "^4.23.12"
   }
 }
