@@ -103,9 +103,12 @@
         {{ grade != null ? `in ${yearName(grade)}` : `in top ${maxFreq}` }}.
       </p>
 
+      <p v-else-if="!shown.length && pending" class="text-sm text-neutral-500">
+        Loading…
+      </p>
       <p v-else-if="!shown.length" class="text-sm text-neutral-500">
-        You know every kanji loaded so far. Load more, or turn off “Hide known
-        kanji”.
+        You know every kanji in this list. Turn off “Hide known kanji” to see
+        them.
       </p>
 
       <ul v-else class="freq-grid">
@@ -123,7 +126,7 @@
           >
             <span
               v-if="item.status"
-              class="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full px-1.5 text-[9px] font-semibold uppercase tracking-wide text-neutral-900"
+              class="absolute top-1 left-1/2 -translate-x-1/2 rounded-full px-1.5 text-[9px] font-semibold uppercase tracking-wide text-neutral-900"
               :style="{ backgroundColor: STATUS_STYLE[item.status].dark }"
             >
               {{ STATUS_STYLE[item.status].label }}
@@ -215,6 +218,17 @@ const shown = computed(() =>
     .map((item) => ({ ...item, status: statusOf(item.kanji) }))
     .filter((item) => !hideKnown.value || item.status !== "mature"),
 );
+
+// Hiding known kanji only removes them from pages already loaded, so keep
+// reading until an unknown one appears or the list runs out.
+watch(shown, (list) => {
+  if (!hideKnown.value || pending.value || list.length || !hasMore.value)
+    return;
+  const before = items.value.length;
+  fetchSlice(before, PAGE_SIZE, false).then(() => {
+    if (items.value.length === before) total.value = items.value.length;
+  });
+});
 
 async function fetchSlice(offset: number, limit: number, reset: boolean) {
   const id = ++requestId;
