@@ -5,7 +5,7 @@
  */
 export default defineEventHandler(async (event) => {
   const userId = meId(event);
-  const statuses = userStatuses(userId);
+  const statuses = await userStatuses(userId);
   const passed = new Set(
     [...statuses]
       .filter(([, s]) => s === "young" || s === "mature")
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
       ? [...new Set(query.normalize("NFC"))]
           .filter((k) => passed.has(k))
           .slice(0, 40)
-      : recentKanji(userId, statuses, ["young", "mature"], 40);
+      : await recentKanji(userId, statuses, ["young", "mature"], 40);
 
   const lists = await Promise.all(
     basedOn.map((k) => fetchCommonWords(k).catch(() => [])),

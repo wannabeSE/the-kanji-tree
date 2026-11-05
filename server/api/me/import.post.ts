@@ -50,13 +50,13 @@ export default defineEventHandler(async (event) => {
 
   const counts = { items: 0, reviews: 0, notes: 0, skipped: 0 };
   const now = Date.now();
-  tx(() => {
+  await tx(async () => {
     for (const i of items) {
       if (!validItem(i)) {
         counts.skipped++;
         continue;
       }
-      dbRun(
+      await dbRun(
         `INSERT INTO srs_items (user_id, kanji, facet, ease, interval_days, reps, lapses, due_at, suspended, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (user_id, kanji, facet) DO UPDATE SET ease = excluded.ease,
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
         continue;
       }
       const kanji = (r.kanji as string).normalize("NFC");
-      const exists = dbGet(
+      const exists = await dbGet(
         "SELECT 1 FROM reviews WHERE user_id = ? AND kanji = ? AND facet = ? AND reviewed_at = ?",
         userId,
         kanji,
@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
         r.reviewed_at as number,
       );
       if (exists) continue;
-      dbRun(
+      await dbRun(
         `INSERT INTO reviews (user_id, kanji, facet, grade, prev_interval, new_interval, duration_ms, reviewed_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         userId,
@@ -108,7 +108,7 @@ export default defineEventHandler(async (event) => {
         counts.skipped++;
         continue;
       }
-      dbRun(
+      await dbRun(
         `INSERT INTO notes (user_id, kanji, mnemonic, updated_at) VALUES (?, ?, ?, ?)
          ON CONFLICT (user_id, kanji) DO UPDATE SET mnemonic = excluded.mnemonic, updated_at = excluded.updated_at`,
         userId,

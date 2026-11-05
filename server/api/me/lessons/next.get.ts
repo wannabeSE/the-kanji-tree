@@ -2,9 +2,9 @@
 export default defineEventHandler(async (event) => {
   const userId = meId(event);
   const count = Math.min(Math.max(Number(getQuery(event).count) || 5, 1), 10);
-  const settings = userSettings(userId);
+  const settings = await userSettings(userId);
 
-  const statuses = userStatuses(userId);
+  const statuses = await userStatuses(userId);
   const started = [...statuses]
     .filter(([, s]) => s !== "suspended")
     .map(([k]) => k);
@@ -12,9 +12,11 @@ export default defineEventHandler(async (event) => {
   const picks = pickLessons(candidates, started, settings.target_jlpt, count);
 
   const notes = new Map(
-    dbAll<{ kanji: string; mnemonic: string }>(
-      "SELECT kanji, mnemonic FROM notes WHERE user_id = ?",
-      userId,
+    (
+      await dbAll<{ kanji: string; mnemonic: string }>(
+        "SELECT kanji, mnemonic FROM notes WHERE user_id = ?",
+        userId,
+      )
     ).map((n) => [n.kanji, n.mnemonic]),
   );
   const lessons = await Promise.all(

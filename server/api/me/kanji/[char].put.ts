@@ -16,9 +16,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Unknown action" });
 
   const now = Date.now();
-  tx(() => {
+  await tx(async () => {
     if (action === "reset") {
-      dbRun(
+      await dbRun(
         "DELETE FROM srs_items WHERE user_id = ? AND kanji = ?",
         userId,
         kanji,
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       return;
     }
     for (const facet of FACETS) {
-      dbRun(
+      await dbRun(
         `INSERT INTO srs_items (user_id, kanji, facet, due_at, created_at)
          VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
         userId,
@@ -37,19 +37,19 @@ export default defineEventHandler(async (event) => {
       );
     }
     if (action === "learn") {
-      dbRun(
+      await dbRun(
         "UPDATE srs_items SET suspended = 0 WHERE user_id = ? AND kanji = ?",
         userId,
         kanji,
       );
     } else if (action === "ignore") {
-      dbRun(
+      await dbRun(
         "UPDATE srs_items SET suspended = 1 WHERE user_id = ? AND kanji = ?",
         userId,
         kanji,
       );
     } else {
-      dbRun(
+      await dbRun(
         `UPDATE srs_items SET suspended = 0, reps = MAX(reps, 2),
            interval_days = MAX(interval_days, ?), due_at = ?
          WHERE user_id = ? AND kanji = ?`,
@@ -61,5 +61,5 @@ export default defineEventHandler(async (event) => {
     }
   });
 
-  return { kanji, status: kanjiStatusFor(userId, kanji) };
+  return { kanji, status: await kanjiStatusFor(userId, kanji) };
 });

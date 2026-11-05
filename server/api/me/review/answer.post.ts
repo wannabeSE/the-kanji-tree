@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     10 * 60_000,
   );
 
-  const item = dbGet<ItemRow>(
+  const item = await dbGet<ItemRow>(
     "SELECT * FROM srs_items WHERE user_id = ? AND kanji = ? AND facet = ?",
     userId,
     kanji,
@@ -28,8 +28,8 @@ export default defineEventHandler(async (event) => {
 
   const now = Date.now();
   const next = schedule(item, grade, now);
-  tx(() => {
-    dbRun(
+  await tx(async () => {
+    await dbRun(
       `INSERT INTO reviews (user_id, kanji, facet, grade, prev_interval, new_interval, duration_ms, reviewed_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       userId,
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
       Math.round(durationMs),
       now,
     );
-    dbRun(
+    await dbRun(
       `UPDATE srs_items SET ease = ?, interval_days = ?, reps = ?, lapses = ?, due_at = ?
        WHERE user_id = ? AND kanji = ? AND facet = ?`,
       next.ease,
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...next,
-    status: kanjiStatusFor(userId, kanji),
+    status: await kanjiStatusFor(userId, kanji),
     leech: next.lapses >= LEECH_LAPSES,
   };
 });

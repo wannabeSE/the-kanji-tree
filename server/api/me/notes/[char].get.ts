@@ -1,6 +1,6 @@
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const kanji = readKanjiParam(event);
-  const row = dbGet<{ mnemonic: string }>(
+  const row = await dbGet<{ mnemonic: string }>(
     "SELECT mnemonic FROM notes WHERE user_id = ? AND kanji = ?",
     meId(event),
     kanji,
