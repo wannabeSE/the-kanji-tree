@@ -1,5 +1,5 @@
 import schema from "../database/schema.sql";
 
-export default defineNitroPlugin(() => {
-  db().exec(schema);
+export default defineNitroPlugin(async () => {
+  await migrate(schema);
 });
