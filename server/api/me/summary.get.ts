@@ -54,7 +54,6 @@ export default defineEventHandler(async (event) => {
   }));
 
   const counts = { ...tally([...statuses.keys()]), dueNow: 0, newToday: 0 };
-  const newLeft = await newCardsLeftToday(userId, settings, now);
   const forecast = new Map<string, number>();
   for (let i = 0; i < 14; i++) forecast.set(addDays(today, i), 0);
   let newWaiting = 0;
@@ -68,7 +67,9 @@ export default defineEventHandler(async (event) => {
     const key = item.due_at <= now ? today : toDay(item.due_at);
     if (forecast.has(key)) forecast.set(key, forecast.get(key)! + 1);
   }
-  counts.newToday = Math.min(newWaiting, newLeft);
+  counts.newToday = newWaiting;
+  if (newWaiting)
+    forecast.set(today, (forecast.get(today) ?? 0) + newWaiting);
 
   // ponytail: loads every review timestamp; fine for years of daily use, aggregate in SQL past ~1M rows.
   const reviews = await dbAll<{

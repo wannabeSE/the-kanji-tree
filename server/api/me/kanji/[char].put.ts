@@ -3,7 +3,7 @@ import type { StudyAction } from "#shared/utils/status";
 const ACTIONS: StudyAction[] = ["learn", "known", "ignore", "reset"];
 
 /**
- * learn: add both facets as new cards (keeps existing progress).
+ * learn: add both facets and make a first-time card due now (keeps existing progress).
  * known: both facets at a 21-day interval, so they count as mature now.
  * ignore: suspend both facets. reset: forget the kanji entirely.
  */
@@ -37,8 +37,16 @@ export default defineEventHandler(async (event) => {
       );
     }
     if (action === "learn") {
+      // A finished lesson is already studied, so it belongs in Review now,
+      // not behind the daily new-card cap. Cards with a real interval stay put.
       await dbRun(
-        "UPDATE srs_items SET suspended = 0 WHERE user_id = ? AND kanji = ?",
+        `UPDATE srs_items
+         SET suspended = 0,
+             due_at = CASE WHEN interval_days <= 0 THEN ? ELSE due_at END,
+             interval_days = CASE WHEN interval_days <= 0 THEN ? ELSE interval_days END
+         WHERE user_id = ? AND kanji = ?`,
+        now,
+        LEARN_STEP_DAYS,
         userId,
         kanji,
       );

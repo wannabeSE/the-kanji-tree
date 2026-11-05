@@ -4,7 +4,7 @@ interface Card {
   isNew: boolean;
 }
 
-/** Due cards first (oldest due first), then new cards up to today's limit in learning-path order. */
+/** Due cards first (oldest due first), then every card still waiting for its first review. The two cards for one kanji are split apart. */
 export default defineEventHandler(async (event) => {
   const userId = meId(event);
   const settings = await userSettings(userId);
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     await dbAll<Omit<Card, "isNew">>(
       `SELECT kanji, facet FROM srs_items
      WHERE user_id = ? AND suspended = 0 AND interval_days > 0 AND due_at <= ?
-     ORDER BY due_at LIMIT 200`,
+     ORDER BY due_at, facet LIMIT 200`,
       userId,
       now,
     )
@@ -36,16 +36,16 @@ export default defineEventHandler(async (event) => {
     freshKanji.length,
   );
   const rank = new Map(order.map((k, i) => [k, i]));
-  const newCards = fresh
+  const rankOf = (kanji: string) => rank.get(kanji) ?? Number.MAX_SAFE_INTEGER;
+  const newCards = [...fresh]
     .sort(
       (a, b) =>
-        rank.get(a.kanji)! - rank.get(b.kanji)! ||
+        rankOf(a.kanji) - rankOf(b.kanji) ||
         FACETS.indexOf(a.facet) - FACETS.indexOf(b.facet),
     )
-    .slice(0, await newCardsLeftToday(userId, settings, now))
     .map((c) => ({ ...c, isNew: true }));
 
-  const cards: Card[] = [...due, ...newCards];
+  const cards: Card[] = spaceFacets([...due, ...newCards]);
   const kanji = [...new Set(cards.map((c) => c.kanji))];
   await prefetchKanji(kanji.slice(0, 10));
 

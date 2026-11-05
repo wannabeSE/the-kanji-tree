@@ -3,6 +3,24 @@ import type { KanjiStatus } from "../../shared/utils/status";
 export type Facet = "meaning" | "reading";
 export const FACETS: Facet[] = ["meaning", "reading"];
 
+/**
+ * The meaning and reading of one kanji should not sit next to each other.
+ * The first card for each kanji stays in order; the rest follow after.
+ */
+export function spaceFacets<T extends { kanji: string }>(cards: T[]): T[] {
+  const first: T[] = [];
+  const rest: T[] = [];
+  const seen = new Set<string>();
+  for (const card of cards) {
+    if (seen.has(card.kanji)) rest.push(card);
+    else {
+      seen.add(card.kanji);
+      first.push(card);
+    }
+  }
+  return rest.length ? [...first, ...spaceFacets(rest)] : first;
+}
+
 /** 1 Again, 2 Hard, 3 Good, 4 Easy */
 export type Grade = 1 | 2 | 3 | 4;
 
