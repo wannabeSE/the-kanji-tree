@@ -33,7 +33,7 @@
           v-model="q"
           type="search"
           enterkeyhint="search"
-          placeholder="Enter Kanji…"
+          placeholder="Kanji or reading"
           class="w-full rounded-full bg-white/5 px-4 py-2 text-sm outline-none ring-1 ring-white/10 placeholder:text-neutral-500 focus:ring-white/25"
         />
         <button
@@ -54,20 +54,32 @@
       >
         No results for “{{ searchResults.query.q }}”.
       </p>
-      <ul
-        v-else-if="searchResults?.results?.length"
-        class="flex flex-wrap gap-2"
-      >
-        <li v-for="item in searchResults.results" :key="item.kanji">
-          <button
-            type="button"
-            class="flex size-11 items-center justify-center rounded-2xl bg-[#2c2c2e] text-xl ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#3a3a3c] hover:ring-white/25"
-            @click="setRoot(item.kanji)"
+      <div v-else-if="searchShown.length" class="space-y-2">
+        <p class="text-xs leading-relaxed text-neutral-500">
+          <template
+            v-if="searchResults && searchResults.count > searchShown.length"
           >
-            {{ item.kanji }}
-          </button>
-        </li>
-      </ul>
+            {{ searchShown.length }} most common of
+            {{ searchResults.count }} kanji for “{{ searchResults.query.q }}”.
+          </template>
+          <template v-else-if="searchResults">
+            {{ searchResults.count }} kanji for “{{ searchResults.query.q }}”.
+          </template>
+          Tap one to center the tree on it.
+        </p>
+        <ul class="flex flex-wrap gap-2">
+          <li v-for="item in searchShown" :key="item.kanji">
+            <button
+              type="button"
+              class="flex size-11 cursor-pointer items-center justify-center rounded-2xl bg-[#2c2c2e] text-xl ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#3a3a3c] hover:ring-white/25"
+              :aria-label="`Center the tree on ${item.kanji}`"
+              @click="setRoot(item.kanji)"
+            >
+              {{ item.kanji }}
+            </button>
+          </li>
+        </ul>
+      </div>
 
       <div class="space-y-2">
         <p
@@ -86,7 +98,10 @@
         <p
           class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
         >
-          JLPT
+          Tree colors
+        </p>
+        <p class="text-xs leading-relaxed text-neutral-500">
+          N5 is easiest, N1 is hardest. These match the badges on the tree.
         </p>
         <div class="flex flex-wrap gap-1">
           <span
@@ -101,11 +116,26 @@
             N{{ level }}
           </span>
         </div>
+        <template v-if="loggedIn">
+          <p class="text-xs leading-relaxed text-neutral-500">
+            Box fill shows your progress.
+          </p>
+          <div class="flex flex-wrap gap-1">
+            <span
+              v-for="status in STATUS_ORDER"
+              :key="status"
+              class="rounded-full px-2 py-0.5 text-[10px] font-semibold text-neutral-800"
+              :style="{ backgroundColor: STATUS_STYLE[status].light }"
+            >
+              {{ STATUS_STYLE[status].label }}
+            </span>
+          </div>
+        </template>
       </div>
 
       <p class="mt-auto text-xs leading-relaxed text-neutral-500">
-        Drag to pan. Pinch or scroll to zoom. Tap a node for details. Red arrow
-        expands children.
+        Drag to move the tree. Scroll or pinch to zoom. Tap a box to open its
+        details. Tap the red circle to show or hide the kanji built from it.
       </p>
     </aside>
 
@@ -122,6 +152,7 @@
             v-if="tree?.tree"
             :tree="tree.tree"
             :selected-id="selectedId"
+            :statuses="statuses"
             @select="selectKanji"
           />
         </ClientOnly>
@@ -158,7 +189,42 @@
           </button>
         </div>
 
-        <KanjiCard :kanji="selected" />
+        <KanjiCard
+          :kanji="selected"
+          :active-reading="activeReading"
+          @reading="searchReading"
+        />
+
+        <p v-if="wordsLoading" class="text-xs text-neutral-500">
+          Loading words…
+        </p>
+        <section v-else-if="wordsForSelection.length" class="space-y-2">
+          <h2
+            class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
+          >
+            Words with this kanji
+          </h2>
+          <p class="text-xs leading-relaxed text-neutral-500">
+            Common words that contain this kanji, with reading and meaning.
+          </p>
+          <ul class="space-y-2">
+            <li
+              v-for="word in wordsForSelection"
+              :key="word.written + word.pronounced"
+              class="border-b border-white/10 pb-2 last:border-b-0"
+            >
+              <p class="flex flex-wrap items-baseline gap-x-2">
+                <span class="text-lg text-white">{{ word.written }}</span>
+                <span class="text-sm text-neutral-400">{{
+                  word.pronounced
+                }}</span>
+              </p>
+              <p class="text-xs leading-relaxed text-neutral-400">
+                {{ word.meaning }}
+              </p>
+            </li>
+          </ul>
+        </section>
 
         <button
           type="button"
@@ -180,7 +246,7 @@
             <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
             <circle cx="12" cy="5" r="3" />
           </svg>
-          Use as root
+          Center the tree on {{ selected.kanji }}
         </button>
 
         <section v-if="fromParents.length" class="space-y-2">
@@ -189,6 +255,10 @@
           >
             How it is formed
           </h2>
+          <p class="text-xs leading-relaxed text-neutral-500">
+            White is this kanji. Tap a dark character to open its details. Pink
+            text is the part that was added.
+          </p>
           <KanjiFormula
             v-for="transform in fromParents"
             :key="transform.formula"
@@ -202,8 +272,11 @@
           <h2
             class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
           >
-            Add a component
+            Kanji built from this one
           </h2>
+          <p class="text-xs leading-relaxed text-neutral-500">
+            Tap a dark character to open its details.
+          </p>
           <div class="max-h-48 space-y-2 overflow-y-auto md:max-h-64">
             <KanjiFormula
               v-for="transform in toChildren.slice(0, 12)"
@@ -224,13 +297,16 @@
 </template>
 
 <script setup lang="ts">
+import { STATUS_ORDER } from "#shared/utils/status";
 import type { KanjiCardData } from "~/components/KanjiCard.vue";
 import type { KanjiFormulaProps } from "~/components/KanjiFormula.vue";
-
 type SelectedKanji = KanjiCardData & {
   fromParents?: KanjiFormulaProps[];
   toChildren?: KanjiFormulaProps[];
 };
+
+type CommonWord = { written: string; pronounced: string; meaning: string };
+type WordsPayload = { kanji: string; words: CommonWord[] };
 
 useHead({
   meta: [
@@ -250,10 +326,12 @@ function rootFromQuery() {
 }
 
 const q = ref("");
+const activeReading = ref<string | null>(null);
 const root = ref(rootFromQuery());
 const selectedId = ref(root.value);
 const panelOpen = ref(false);
 const { rootLabel, menuOpen } = useExplorerHeader();
+const { statuses, loggedIn } = useKanjiStatus();
 
 rootLabel.value = root.value;
 watch(root, (value) => {
@@ -296,17 +374,46 @@ const { data: selected, status: selectedStatus } =
     { watch: [selectedId] },
   );
 
+const { data: words, status: wordsStatus } = useFetch<WordsPayload>(
+  () => `/api/words/${encodeURIComponent(selectedId.value)}`,
+  { lazy: true, watch: [selectedId] },
+);
+
+const wordsForSelection = computed(() =>
+  words.value?.kanji === selectedId.value ? words.value.words : [],
+);
+const wordsLoading = computed(
+  () =>
+    wordsStatus.value === "pending" && words.value?.kanji !== selectedId.value,
+);
+
+const SEARCH_LIMIT = 24;
+const searchShown = computed(
+  () => searchResults.value?.results?.slice(0, SEARCH_LIMIT) ?? [],
+);
+
 function onSearch() {
-  if (q.value.trim()) runSearch();
+  if (!q.value.trim()) return;
+  activeReading.value = null;
+  runSearch();
+}
+
+function searchReading(reading: string) {
+  q.value = reading;
+  activeReading.value = reading;
+  menuOpen.value = true;
+  runSearch();
 }
 
 function selectKanji(id: string) {
+  activeReading.value = null;
   selectedId.value = id;
   panelOpen.value = true;
   menuOpen.value = false;
 }
 
 function setRoot(id: string) {
+  activeReading.value = null;
   root.value = id;
   selectedId.value = id;
   panelOpen.value = true;

@@ -14,9 +14,9 @@
             Most used kanji
           </h1>
           <p class="max-w-lg text-sm leading-relaxed text-neutral-400">
-            Ranked from Mainichi Shinbun. #1 is the most common. Combine a rank
-            range with a JLPT level, then tap a character to open it in the
-            tree.
+            Ranked from Mainichi Shinbun. #1 is the most common. Pick a rank
+            range or a school year, optionally narrow it by JLPT, then tap a
+            character to open it in the tree.
           </p>
         </div>
 
@@ -28,13 +28,29 @@
               type="button"
               class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
               :class="
-                maxFreq === preset.max
+                grade == null && maxFreq === preset.max
                   ? 'bg-white text-neutral-900 shadow-sm'
                   : 'bg-white/10 text-neutral-400 hover:bg-white/15 hover:text-white'
               "
               @click="setRange(preset.max)"
             >
               {{ preset.label }}
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="year in SCHOOL_YEARS"
+              :key="year"
+              type="button"
+              class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
+              :class="
+                grade === year
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'bg-white/10 text-neutral-400 hover:bg-white/15 hover:text-white'
+              "
+              @click="setGrade(year)"
+            >
+              {{ year === 8 ? "Secondary" : `Year ${year}` }}
             </button>
           </div>
           <div class="flex w-fit flex-wrap gap-1 rounded-full bg-white/5 p-1">
@@ -65,6 +81,13 @@
               N{{ level }}
             </button>
           </div>
+          <label
+            v-if="loggedIn"
+            class="flex cursor-pointer items-center gap-2 text-sm text-neutral-400"
+          >
+            <input v-model="hideKnown" type="checkbox" class="accent-white" />
+            Hide known kanji
+          </label>
         </div>
       </div>
 
@@ -76,20 +99,41 @@
       </p>
 
       <p v-else-if="!items.length" class="text-sm text-neutral-500">
-        No{{ jlpt != null ? ` N${jlpt}` : "" }} kanji in top {{ maxFreq }}.
+        No{{ jlpt != null ? ` N${jlpt}` : "" }} kanji
+        {{ grade != null ? `in ${yearName(grade)}` : `in top ${maxFreq}` }}.
+      </p>
+
+      <p v-else-if="!shown.length" class="text-sm text-neutral-500">
+        You know every kanji loaded so far. Load more, or turn off “Hide known
+        kanji”.
       </p>
 
       <ul v-else class="freq-grid">
-        <li v-for="item in items" :key="item.kanji">
+        <li v-for="item in shown" :key="item.kanji">
           <NuxtLink
             :to="{ path: '/', query: { root: item.kanji } }"
-            class="group flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#2c2c2e] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#3a3a3c] hover:ring-white/25"
+            class="group relative flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#2c2c2e] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#3a3a3c] hover:ring-white/25"
+            :style="
+              item.status
+                ? {
+                    boxShadow: `inset 0 0 0 2px ${STATUS_STYLE[item.status].dark}`,
+                  }
+                : undefined
+            "
           >
+            <span
+              v-if="item.status"
+              class="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full px-1.5 text-[9px] font-semibold uppercase tracking-wide text-neutral-900"
+              :style="{ backgroundColor: STATUS_STYLE[item.status].dark }"
+            >
+              {{ STATUS_STYLE[item.status].label }}
+            </span>
             <span class="text-3xl leading-none text-white md:text-4xl">{{
               item.kanji
             }}</span>
             <span class="flex flex-wrap items-center justify-center gap-1">
               <span
+                v-if="item.freq != null"
                 class="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-neutral-400 group-hover:text-neutral-200"
               >
                 #{{ item.freq }}
@@ -111,8 +155,8 @@
 
       <div v-if="items.length" class="flex flex-col items-center gap-3 pb-10">
         <p class="text-xs tabular-nums text-neutral-500">
-          {{ items.length }} / {{ total
-          }}{{ jlpt != null ? ` N${jlpt}` : "" }} in top {{ maxFreq }}
+          {{ items.length }} / {{ total }}{{ jlpt != null ? ` N${jlpt}` : "" }}
+          {{ grade != null ? `in ${yearName(grade)}` : `in top ${maxFreq}` }}
         </p>
         <button
           v-if="hasMore"
@@ -130,6 +174,7 @@
 
 <script setup lang="ts">
 import { JLPT_SCALE, jlptColors, type JlptLevel } from "~/utils/jlpt";
+import { STATUS_STYLE } from "~/utils/status";
 
 type FreqItem = { kanji: string; freq: number | null; jlpt: number | null };
 
@@ -140,6 +185,8 @@ type SearchPayload = {
 
 const PAGE_SIZE = 20;
 
+const SCHOOL_YEARS = [1, 2, 3, 4, 5, 6, 8] as const;
+
 const RANGE_PRESETS = [
   { label: "Top 20", max: 20 },
   { label: "Top 100", max: 100 },
@@ -149,7 +196,8 @@ const RANGE_PRESETS = [
   { label: "Top 1000", max: 1000 },
 ] as const;
 
-const maxFreq = ref(20);
+const maxFreq = ref<number | null>(20);
+const grade = ref<number | null>(null);
 const jlpt = ref<JlptLevel | null>(null);
 const items = ref<FreqItem[]>([]);
 const total = ref(0);
@@ -159,6 +207,15 @@ let requestId = 0;
 
 const hasMore = computed(() => items.value.length < total.value);
 
+const { loggedIn, statusOf } = useKanjiStatus();
+const hideKnown = ref(false);
+// ponytail: filters loaded pages only, so a page can show fewer than 20; push to /api/search if that bothers users.
+const shown = computed(() =>
+  items.value
+    .map((item) => ({ ...item, status: statusOf(item.kanji) }))
+    .filter((item) => !hideKnown.value || item.status !== "mature"),
+);
+
 async function fetchSlice(offset: number, limit: number, reset: boolean) {
   const id = ++requestId;
   pending.value = true;
@@ -166,7 +223,8 @@ async function fetchSlice(offset: number, limit: number, reset: boolean) {
   try {
     const data = await $fetch<SearchPayload>("/api/search", {
       query: {
-        maxFreq: maxFreq.value,
+        maxFreq: maxFreq.value ?? undefined,
+        grade: grade.value ?? undefined,
         jlpt: jlpt.value ?? undefined,
         limit,
         offset,
@@ -184,10 +242,17 @@ async function fetchSlice(offset: number, limit: number, reset: boolean) {
   }
 }
 
-function setRange(max: number) {
-  if (max === maxFreq.value && items.value.length) return;
+function yearName(year: number) {
+  return year === 8 ? "secondary Jōyō" : `school year ${year}`;
+}
 
-  const growing = max > maxFreq.value;
+function setRange(max: number) {
+  const fromGrade = grade.value != null;
+  if (!fromGrade && max === maxFreq.value && items.value.length) return;
+
+  const previous = maxFreq.value ?? 0;
+  grade.value = null;
+  const growing = !fromGrade && max > previous;
   maxFreq.value = max;
 
   if (growing && items.value.length) {
@@ -196,6 +261,14 @@ function setRange(max: number) {
     return;
   }
 
+  fetchSlice(0, PAGE_SIZE, true);
+}
+
+function setGrade(year: number) {
+  if (year === grade.value && maxFreq.value == null && items.value.length)
+    return;
+  grade.value = year;
+  maxFreq.value = null;
   fetchSlice(0, PAGE_SIZE, true);
 }
 

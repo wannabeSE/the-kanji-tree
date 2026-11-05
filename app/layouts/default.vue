@@ -8,3 +8,11 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const { refresh, loggedIn } = useKanjiStatus();
+
+onMounted(() => {
+  watch(loggedIn, refresh, { immediate: true });
+});
+</script>
