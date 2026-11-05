@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   const { email, password } = await readCredentials(event);
 
-  const row = dbGet<{ id: number; email: string; password_hash: string }>(
+  const row = await dbGet<{ id: number; email: string; password_hash: string }>(
     "SELECT id, email, password_hash FROM users WHERE email = ?",
     email,
   );

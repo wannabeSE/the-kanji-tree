@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
   const { user } = await requireUserSession(event);
   // A session can outlive its user row (e.g. a wiped dev database).
-  if (!dbGet("SELECT id FROM users WHERE id = ?", user.id)) {
+  if (!(await dbGet("SELECT id FROM users WHERE id = ?", user.id))) {
     await clearUserSession(event);
     throw createError({ statusCode: 401, statusMessage: "Log in first" });
   }

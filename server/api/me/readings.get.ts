@@ -4,9 +4,9 @@
  */
 export default defineEventHandler(async (event) => {
   const userId = meId(event);
-  const statuses = userStatuses(userId);
+  const statuses = await userStatuses(userId);
   // ponytail: 12 recent kanji bounds the kanjiapi.dev calls on a cold cache.
-  const recent = recentKanji(
+  const recent = await recentKanji(
     userId,
     statuses,
     ["learning", "young", "mature"],

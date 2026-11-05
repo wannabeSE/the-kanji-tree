@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     });
 
   if (mnemonic) {
-    dbRun(
+    await dbRun(
       `INSERT INTO notes (user_id, kanji, mnemonic, updated_at) VALUES (?, ?, ?, ?)
        ON CONFLICT (user_id, kanji) DO UPDATE SET mnemonic = excluded.mnemonic, updated_at = excluded.updated_at`,
       userId,
@@ -21,7 +21,11 @@ export default defineEventHandler(async (event) => {
       Date.now(),
     );
   } else {
-    dbRun("DELETE FROM notes WHERE user_id = ? AND kanji = ?", userId, kanji);
+    await dbRun(
+      "DELETE FROM notes WHERE user_id = ? AND kanji = ?",
+      userId,
+      kanji,
+    );
   }
   return { kanji, mnemonic };
 });

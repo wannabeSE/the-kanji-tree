@@ -12,10 +12,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Unknown quiz mode" });
   const count = Math.min(Math.max(Number(query.count) || 10, 1), 20);
 
-  const statuses = userStatuses(userId);
+  const statuses = await userStatuses(userId);
   let pool = [...statuses].filter(([, s]) => s !== "suspended").map(([k]) => k);
   if (pool.length < 4) {
-    const level = userSettings(userId).target_jlpt ?? 5;
+    const level = (await userSettings(userId)).target_jlpt ?? 5;
     pool = Object.entries(jlptMap as Record<string, number>)
       .filter(([k, v]) => v === level && getGrade(k) != null)
       .map(([k]) => k);

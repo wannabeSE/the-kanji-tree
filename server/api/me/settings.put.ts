@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   const userId = meId(event);
   const body = await readBody<Record<string, unknown> | null>(event);
-  const current = userSettings(userId);
+  const current = await userSettings(userId);
 
   const limit =
     body?.daily_new_limit === undefined
@@ -25,12 +25,12 @@ export default defineEventHandler(async (event) => {
   if (!isTimeZone(tz))
     throw createError({ statusCode: 400, statusMessage: "Unknown time zone" });
 
-  dbRun(
+  await dbRun(
     "UPDATE users SET daily_new_limit = ?, target_jlpt = ?, tz = ? WHERE id = ?",
     limit,
     target as number | null,
     tz,
     userId,
   );
-  return userSettings(userId);
+  return await userSettings(userId);
 });

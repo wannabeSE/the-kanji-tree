@@ -1,12 +1,13 @@
 /** ?format=json (default, re-importable) or ?format=csv (one row per card, for spreadsheets). */
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const userId = meId(event);
   const format = getQuery(event).format === "csv" ? "csv" : "json";
-  const items = userItems(userId);
-  const notes = dbAll<{ kanji: string; mnemonic: string; updated_at: number }>(
-    "SELECT kanji, mnemonic, updated_at FROM notes WHERE user_id = ?",
-    userId,
-  );
+  const items = await userItems(userId);
+  const notes = await dbAll<{
+    kanji: string;
+    mnemonic: string;
+    updated_at: number;
+  }>("SELECT kanji, mnemonic, updated_at FROM notes WHERE user_id = ?", userId);
   const stamp = new Date().toISOString().slice(0, 10);
   setHeader(
     event,
@@ -16,7 +17,7 @@ export default defineEventHandler((event) => {
 
   if (format === "json") {
     setHeader(event, "Content-Type", "application/json; charset=utf-8");
-    const reviews = dbAll(
+    const reviews = await dbAll(
       `SELECT kanji, facet, grade, prev_interval, new_interval, duration_ms, reviewed_at
        FROM reviews WHERE user_id = ? ORDER BY reviewed_at`,
       userId,

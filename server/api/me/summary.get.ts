@@ -10,14 +10,14 @@ const GRADE = gradeMap as Record<string, number>;
 const FREQ = freqMap as Record<string, number>;
 const FREQ_BANDS = [100, 500, 1000, 2501];
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const userId = meId(event);
-  const settings = userSettings(userId);
+  const settings = await userSettings(userId);
   const now = Date.now();
   const toDay = dayKeyer(settings.tz);
   const today = toDay(now);
 
-  const items = userItems(userId);
+  const items = await userItems(userId);
   const statuses = statusesFromItems(items);
   const tally = (chars: string[]) => {
     const t: Tally = {
@@ -54,7 +54,7 @@ export default defineEventHandler((event) => {
   }));
 
   const counts = { ...tally([...statuses.keys()]), dueNow: 0, newToday: 0 };
-  const newLeft = newCardsLeftToday(userId, settings, now);
+  const newLeft = await newCardsLeftToday(userId, settings, now);
   const forecast = new Map<string, number>();
   for (let i = 0; i < 14; i++) forecast.set(addDays(today, i), 0);
   let newWaiting = 0;
@@ -71,7 +71,7 @@ export default defineEventHandler((event) => {
   counts.newToday = Math.min(newWaiting, newLeft);
 
   // ponytail: loads every review timestamp; fine for years of daily use, aggregate in SQL past ~1M rows.
-  const reviews = dbAll<{
+  const reviews = await dbAll<{
     kanji: string;
     facet: string;
     grade: number;
@@ -150,7 +150,7 @@ export default defineEventHandler((event) => {
     };
   }
 
-  const leeches = dbAll<{ kanji: string; facet: string; lapses: number }>(
+  const leeches = await dbAll<{ kanji: string; facet: string; lapses: number }>(
     `SELECT kanji, facet, lapses FROM srs_items
      WHERE user_id = ? AND suspended = 0 AND lapses >= ? ORDER BY lapses DESC LIMIT 30`,
     userId,
