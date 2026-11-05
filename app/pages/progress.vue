@@ -39,6 +39,12 @@
             <p class="text-xs text-neutral-400">{{ tile.label }}</p>
           </div>
         </div>
+        <p
+          v-if="!summary.streak.reviewedToday"
+          class="text-xs text-neutral-500"
+        >
+          Review today to keep the streak.
+        </p>
 
         <section class="card space-y-4">
           <h2 class="eyebrow">Goal</h2>
@@ -103,7 +109,7 @@
           <h2 class="eyebrow">Activity</h2>
           <div
             ref="heatmapScroller"
-            class="overflow-x-auto pb-1 [scrollbar-color:#525252_transparent]"
+            class="overflow-x-auto pb-1"
           >
             <div
               class="heatmap"
@@ -300,9 +306,7 @@ const tiles = computed(() => {
       value: s.counts.new + s.counts.learning + s.counts.young,
     },
     {
-      label: s.streak.reviewedToday
-        ? "Day streak"
-        : "Day streak (review today to keep it)",
+      label: "Day streak",
       value: s.streak.current,
     },
     { label: "Longest streak", value: s.streak.longest },
@@ -328,7 +332,16 @@ function heatColor(count: number) {
 
 // Most recent days are on the right; start there on narrow screens.
 const heatmapScroller = ref<HTMLElement | null>(null);
-watch(heatmapScroller, (el) => el?.scrollTo({ left: el.scrollWidth }));
+function scrollHeatmap() {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      const el = heatmapScroller.value;
+      if (el) el.scrollLeft = el.scrollWidth;
+    });
+  });
+}
+watch(heatmapScroller, scrollHeatmap);
+watch(() => summary.value?.heatmap.length, scrollHeatmap);
 
 const shortDate = (key: string) =>
   new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, {
