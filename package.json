@@ -12,6 +12,7 @@
     "build:freq": "tsx scripts/build-freq.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "@tailwindcss/vite": "^4.3.3",
     "d3": "^7.9.0",
     "nuxt": "^4.5.2",
