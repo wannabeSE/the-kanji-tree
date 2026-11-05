@@ -8,6 +8,28 @@ body,
   overflow: hidden;
 }
 
+/* Track stays clear so the page color shows through. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.28) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 0.28);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
 @layer components {
   .eyebrow {
     @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500;
