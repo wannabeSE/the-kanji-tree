@@ -31,7 +31,7 @@ export function readKanjiParam(event: H3Event, name = "char"): string {
   return char;
 }
 
-export function userItems(userId: number): ItemRow[] {
+export function userItems(userId: number): Promise<ItemRow[]> {
   return dbAll<ItemRow>("SELECT * FROM srs_items WHERE user_id = ?", userId);
 }
 
@@ -47,22 +47,22 @@ export function statusesFromItems(items: ItemRow[]): Map<string, KanjiStatus> {
   return statuses;
 }
 
-export function userStatuses(userId: number) {
+export async function userStatuses(userId: number) {
   return statusesFromItems(
-    dbAll<ItemRow>(
+    await dbAll<ItemRow>(
       "SELECT kanji, facet, interval_days, suspended FROM srs_items WHERE user_id = ?",
       userId,
     ),
   );
 }
 
-export function kanjiStatusFor(
+export async function kanjiStatusFor(
   userId: number,
   kanji: string,
-): KanjiStatus | null {
+): Promise<KanjiStatus | null> {
   return (
     statusesFromItems(
-      dbAll<ItemRow>(
+      await dbAll<ItemRow>(
         "SELECT kanji, facet, interval_days, suspended FROM srs_items WHERE user_id = ? AND kanji = ?",
         userId,
         kanji,
@@ -71,11 +71,11 @@ export function kanjiStatusFor(
   );
 }
 
-export function userSettings(userId: number): UserSettings {
-  return dbGet<UserSettings>(
+export async function userSettings(userId: number): Promise<UserSettings> {
+  return (await dbGet<UserSettings>(
     "SELECT email, daily_new_limit, target_jlpt, tz FROM users WHERE id = ?",
     userId,
-  )!;
+  ))!;
 }
 
 /** Returns ms → "YYYY-MM-DD" in `tz`; reuse it in loops, building the formatter is the slow part. */
@@ -96,16 +96,16 @@ export function weekStart(key: string): string {
 }
 
 /** New cards (facets) the user may still start today. */
-export function newCardsLeftToday(
+export async function newCardsLeftToday(
   userId: number,
   settings: UserSettings,
   now: number,
 ) {
-  const started = dbGet<{ n: number }>(
+  const started = (await dbGet<{ n: number }>(
     "SELECT COUNT(*) AS n FROM reviews WHERE user_id = ? AND reviewed_at >= ? AND prev_interval = 0",
     userId,
     startOfLocalDay(now, settings.tz),
-  )!.n;
+  ))!.n;
   return Math.max(0, settings.daily_new_limit - started);
 }
 
