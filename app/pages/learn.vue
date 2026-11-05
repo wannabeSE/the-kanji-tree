@@ -168,22 +168,36 @@
       <section v-else-if="step === 'done'" class="card space-y-3">
         <h2 class="text-2xl font-semibold">
           {{
-            added.length
-              ? `Added ${added.length} kanji to your reviews`
-              : "Lesson finished"
+            saving
+              ? "Saving your lesson…"
+              : added.length
+                ? `Added ${added.length} kanji to your reviews`
+                : "Lesson finished"
           }}
         </h2>
-        <p class="text-4xl" lang="ja">{{ added.join(" ") }}</p>
+        <p v-if="added.length" class="text-4xl" lang="ja">
+          {{ added.join(" ") }}
+        </p>
         <p v-if="saveError" role="alert" class="text-sm text-red-400">
           {{ saveError }}
         </p>
-        <p class="text-sm text-neutral-400">
+        <p v-if="!saving && added.length" class="text-sm text-neutral-400">
           Review them now while they are fresh. Each one comes back as a meaning
           card and a reading card.
         </p>
         <div class="flex gap-2">
-          <NuxtLink to="/review" class="btn-primary">Review now</NuxtLink>
-          <button type="button" class="btn-secondary" @click="load">
+          <NuxtLink
+            v-if="!saving && added.length"
+            to="/review"
+            class="btn-primary"
+            >Review now</NuxtLink
+          >
+          <button
+            type="button"
+            class="btn-secondary"
+            :disabled="saving"
+            @click="load"
+          >
             Next lesson
           </button>
         </div>
@@ -220,6 +234,7 @@ const step = ref<"study" | "quiz" | "done">("study");
 const loading = ref(true);
 const loadError = ref("");
 const saveError = ref("");
+const saving = ref(false);
 const added = ref<string[]>([]);
 
 const lesson = computed(() => lessons.value[position.value] ?? null);
@@ -318,16 +333,22 @@ function advanceQuiz() {
 }
 
 async function finish() {
+  if (saving.value) return;
   step.value = "done";
+  saving.value = true;
   saveError.value = "";
-  const results = await Promise.allSettled(
-    lessons.value.map((l) => mark(l.kanji, "learn")),
-  );
-  added.value = lessons.value
-    .filter((_, i) => results[i]!.status === "fulfilled")
-    .map((l) => l.kanji);
-  if (added.value.length < lessons.value.length)
-    saveError.value = "Some kanji could not be added. Try again.";
+  try {
+    const results = await Promise.allSettled(
+      lessons.value.map((l) => mark(l.kanji, "learn")),
+    );
+    added.value = lessons.value
+      .filter((_, i) => results[i]!.status === "fulfilled")
+      .map((l) => l.kanji);
+    if (added.value.length < lessons.value.length)
+      saveError.value = "Some kanji could not be added. Try again.";
+  } finally {
+    saving.value = false;
+  }
 }
 
 onMounted(load);
