@@ -4,7 +4,9 @@
 
 <script setup lang="ts">
 import * as d3 from "d3";
+import type { KanjiStatus } from "#shared/utils/status";
 import { isJlptLevel, jlptColors } from "~/utils/jlpt";
+import { STATUS_STYLE } from "~/utils/status";
 
 export interface TreeNodePayload {
   id: string;
@@ -27,6 +29,7 @@ interface LocalNode extends TreeNodePayload {
 const props = defineProps<{
   tree: TreeNodePayload;
   selectedId?: string | null;
+  statuses?: Record<string, KanjiStatus>;
 }>();
 
 const emit = defineEmits<{
@@ -267,6 +270,14 @@ function draw(options: { recenter: boolean }) {
     });
 
   node
+    .append("title")
+    .text((d) =>
+      d.data.isMore
+        ? `Show ${d.data.moreCount} more`
+        : `Open details for ${d.data.id}`,
+    );
+
+  node
     .append("rect")
     .attr("width", nodeW)
     .attr("height", nodeH)
@@ -274,6 +285,8 @@ function draw(options: { recenter: boolean }) {
     .attr("ry", 12)
     .attr("fill", (d) => {
       if (d.data.isMore) return "#6d6d6d";
+      const status = props.statuses?.[d.data.id];
+      if (status) return STATUS_STYLE[status].light;
       if (d.data.id === props.selectedId) return "#dcefdc";
       if (d.data.kind === "radical") return "#f3d4cf";
       return "#ffffff";
@@ -369,6 +382,14 @@ function draw(options: { recenter: boolean }) {
     });
 
   expandable
+    .append("title")
+    .text((d) =>
+      d.data.children.some((child) => !child.isMore)
+        ? `Hide kanji built from ${d.data.id}`
+        : `Show kanji built from ${d.data.id}`,
+    );
+
+  expandable
     .append("text")
     .attr("x", nodeW)
     .attr("y", nodeH / 2 + 4)
@@ -407,7 +428,7 @@ watch(
 );
 
 watch(
-  () => props.selectedId,
+  () => [props.selectedId, props.statuses],
   () => draw({ recenter: false }),
 );
 

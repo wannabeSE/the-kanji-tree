@@ -8,6 +8,24 @@ body,
   overflow: hidden;
 }
 
+@layer components {
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500;
+  }
+  .card {
+    @apply rounded-2xl bg-[#2c2c2e] p-4 ring-1 ring-white/10 md:p-5;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-200 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-neutral-100 transition hover:bg-white/20 disabled:opacity-50;
+  }
+  .field {
+    @apply rounded-xl bg-white/5 px-3 py-2 text-sm text-neutral-100 outline-none ring-1 ring-white/10 focus:ring-white/30;
+  }
+}
+
 .kanji-canvas {
   background-color: #1c1c1e;
   background-image:
