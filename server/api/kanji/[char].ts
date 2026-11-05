@@ -4,29 +4,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Missing character" });
 
   const decoded = decodeURIComponent(char);
-  const storage = useStorage("cache");
-  const cacheKey = `kanji:v5:${decoded}`;
+  if ([...decoded].length !== 1)
+    throw createError({ statusCode: 400, statusMessage: "Invalid character" });
 
-  if (await storage.hasItem(cacheKey)) {
-    return await storage.getItem(cacheKey);
-  }
-
-  const apiData = await $fetch(
-    `https://kanjiapi.dev/v1/kanji/${encodeURIComponent(decoded)}`,
-  ).catch(() => null);
-
-  if (!apiData)
+  const entry = await fetchKanjiEntry(decoded);
+  if (!entry)
     throw createError({ statusCode: 404, statusMessage: "Kanji not found" });
-
-  const { fromParents, toChildren } = getTransforms(decoded);
-
-  const payload = {
-    ...apiData,
-    fromParents,
-    toChildren,
-  };
-
-  await storage.setItem(cacheKey, payload, { ttl: 86400 });
-
-  return payload;
+  return entry;
 });
