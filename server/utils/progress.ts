@@ -95,20 +95,6 @@ export function weekStart(key: string): string {
   return addDays(key, -((dow + 6) % 7));
 }
 
-/** New cards (facets) the user may still start today. */
-export async function newCardsLeftToday(
-  userId: number,
-  settings: UserSettings,
-  now: number,
-) {
-  const started = (await dbGet<{ n: number }>(
-    "SELECT COUNT(*) AS n FROM reviews WHERE user_id = ? AND reviewed_at >= ? AND prev_interval = 0",
-    userId,
-    startOfLocalDay(now, settings.tz),
-  ))!.n;
-  return Math.max(0, settings.daily_new_limit - started);
-}
-
 /** Moves a "YYYY-MM-DD" key by whole days. */
 export function addDays(key: string, days: number): string {
   const [y, m, d] = key.split("-").map(Number) as [number, number, number];

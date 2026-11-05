@@ -10,6 +10,7 @@ import {
   facetStatus,
   kanjiStatus,
   schedule,
+  spaceFacets,
   type Grade,
   type SrsState,
 } from "../server/utils/srs";
@@ -67,5 +68,23 @@ assert.equal(kanjiStatus(["mature", "learning"]), "learning");
 assert.equal(kanjiStatus(["mature", "suspended"]), "mature");
 assert.equal(kanjiStatus(["suspended", "suspended"]), "suspended");
 assert.equal(kanjiStatus([]), null);
+
+// Meaning and reading of the same kanji are not reviewed back to back.
+const paired = ["木", "林", "森"].flatMap((kanji) => [
+  { kanji, facet: "meaning" as const },
+  { kanji, facet: "reading" as const },
+]);
+assert.deepEqual(
+  spaceFacets(paired).map((card) => `${card.kanji}:${card.facet}`),
+  [
+    "木:meaning",
+    "林:meaning",
+    "森:meaning",
+    "木:reading",
+    "林:reading",
+    "森:reading",
+  ],
+);
+assert.deepEqual(spaceFacets(paired.slice(0, 2)), paired.slice(0, 2));
 
 console.log("check-srs: ok");
