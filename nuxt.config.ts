@@ -6,10 +6,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["nuxt-auth-utils"],
   css: ["~/assets/css/main.css"],
-  nitro: {
-    // node:sqlite connector; the file lives in .data/db.sqlite
-    experimental: { database: true },
-  },
   vite: {
     plugins: [tailwindcss()],
   },
