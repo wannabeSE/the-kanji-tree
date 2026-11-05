@@ -1,6 +1,7 @@
 import kanjiGraph from "../assets/kanji-graph.json";
 import jlptMap from "../assets/jlpt.json";
 import freqMap from "../assets/freq.json";
+import gradeMap from "../assets/grade.json";
 
 export interface KanjiGraphNode {
   parents: string[];
@@ -15,6 +16,11 @@ export function getJlpt(char: string): number | null {
 
 export function getFreq(char: string): number | null {
   return (freqMap as Record<string, number>)[char] ?? null;
+}
+
+/** 1–6 elementary, 8 secondary Jōyō. Characters outside those lists are null. */
+export function getGrade(char: string): number | null {
+  return (gradeMap as Record<string, number>)[char] ?? null;
 }
 
 /** Lower rank = more common. Unranked kanji are excluded. */
@@ -33,6 +39,44 @@ export function filterByFreq(
       return true;
     })
     .sort((a, b) => (getFreq(a) ?? 9999) - (getFreq(b) ?? 9999));
+}
+
+export interface ApiWord {
+  meanings: { glosses: string[] }[];
+  variants: { written: string; pronounced: string; priorities: string[] }[];
+}
+
+export interface CommonWord {
+  written: string;
+  pronounced: string;
+  meaning: string;
+}
+
+/** Keeps priority-tagged variants containing `char`, most common (lowest nfXX) first. */
+export function pickCommonWords(
+  words: ApiWord[],
+  char: string,
+  limit = 8,
+): CommonWord[] {
+  return words
+    .flatMap((word) => {
+      const variant = word.variants.find(
+        (v) => v.priorities.length && v.written.includes(char),
+      );
+      if (!variant) return [];
+      const nf = variant.priorities.find((p) => p.startsWith("nf"));
+      return [
+        {
+          written: variant.written,
+          pronounced: variant.pronounced,
+          meaning: word.meanings[0]?.glosses.slice(0, 3).join(", ") ?? "",
+          rank: nf ? Number(nf.slice(2)) : 99,
+        },
+      ];
+    })
+    .sort((a, b) => a.rank - b.rank || a.written.length - b.written.length)
+    .slice(0, limit)
+    .map(({ rank: _rank, ...word }) => word);
 }
 
 export function allKanji(): string[] {

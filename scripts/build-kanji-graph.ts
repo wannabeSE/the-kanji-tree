@@ -127,6 +127,7 @@ async function buildKanjiGraph() {
   console.log(`Successfully generated Kanji graph at ${outputPath}`);
 
   await buildJlptMap();
+  await buildGradeMap();
   await buildFreqMap(joyoList);
 }
 
@@ -152,7 +153,35 @@ async function buildJlptMap() {
   );
 }
 
-buildKanjiGraph().catch((err) => {
+/** School years 1–6 plus 8 (Jōyō kanji taught after elementary school). */
+export async function buildGradeMap() {
+  console.log("Fetching school-year kanji lists...");
+  const mapping: Record<string, number> = {};
+  const grades = [1, 2, 3, 4, 5, 6, 8];
+
+  const lists = await Promise.all(
+    grades.map(async (grade) => ({
+      grade,
+      chars: await $fetch<string[]>(
+        `https://kanjiapi.dev/v1/kanji/grade-${grade}`,
+      ),
+    })),
+  );
+
+  for (const { grade, chars } of lists) {
+    for (const char of chars) mapping[char] = grade;
+  }
+
+  const outputPath = resolve(process.cwd(), "server/assets/grade.json");
+  writeFileSync(outputPath, `${JSON.stringify(mapping)}\n`, "utf-8");
+  console.log(
+    `Successfully generated grade map (${Object.keys(mapping).length} kanji) at ${outputPath}`,
+  );
+}
+
+const gradeOnly = process.argv.includes("--grade-only");
+const entry = gradeOnly ? buildGradeMap : buildKanjiGraph;
+entry().catch((err) => {
   console.error(err);
   process.exit(1);
 });
