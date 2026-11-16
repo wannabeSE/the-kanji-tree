@@ -50,26 +50,6 @@ async function build(
     .filter(Boolean)
     .join(" / ");
 
-  if (mode === "stroke") {
-    const alternates = entry.alternate_stroke_counts ?? [];
-    return makeQuestion(
-      {
-        kanji,
-        display: kanji,
-        prompt: "How many strokes?",
-        explain: `${kanji} has ${entry.stroke_count} strokes.${
-          alternates.length
-            ? ` ${alternates.join(" or ")} is a common miscount.`
-            : ""
-        }`,
-      },
-      String(entry.stroke_count),
-      strokeOptions(entry.stroke_count, alternates)
-        .filter((n) => n !== entry.stroke_count)
-        .map(String),
-    );
-  }
-
   if (mode === "okurigana") {
     const kun = shuffle(entry.kun_readings).find(
       (r) => r.includes(".") && !r.includes("-"),

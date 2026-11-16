@@ -113,7 +113,7 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-type Mode = "meaning" | "reading" | "stroke" | "okurigana" | "word";
+type Mode = "meaning" | "reading" | "okurigana" | "word";
 interface Question {
   kanji: string;
   prompt: string;
@@ -128,7 +128,6 @@ const MODES: { id: Mode; label: string }[] = [
   { id: "reading", label: "Reading" },
   { id: "word", label: "Word reading" },
   { id: "okurigana", label: "Okurigana" },
-  { id: "stroke", label: "Stroke count" },
 ];
 
 const mode = ref<Mode | null>(null);

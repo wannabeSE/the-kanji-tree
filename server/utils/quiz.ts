@@ -2,11 +2,10 @@ import { shuffle } from "../../shared/utils/shuffle";
 import { allKanji, getGrade, getJlpt, getKanjiGraph } from "./getKanjiGraph";
 import type { KanjiEntry } from "./kanjiApi";
 
-export type QuizMode = "meaning" | "reading" | "stroke" | "okurigana" | "word";
+export type QuizMode = "meaning" | "reading" | "okurigana" | "word";
 export const QUIZ_MODES: QuizMode[] = [
   "meaning",
   "reading",
-  "stroke",
   "okurigana",
   "word",
 ];
@@ -57,15 +56,6 @@ export function wordReadingOptions(pronounced: string, stems: string[]) {
     .map((s) => pronounced.replace(used, s))
     .filter((p) => p !== pronounced);
   return [...new Set(wrong)];
-}
-
-export function strokeOptions(count: number, alternates: number[] = []) {
-  const options = new Set([count, ...alternates]);
-  for (const delta of [1, -1, 2, -2, 3]) {
-    if (options.size >= 4) break;
-    if (count + delta > 0) options.add(count + delta);
-  }
-  return [...options].slice(0, 4);
 }
 
 /** Look-alikes first (same components in the tree), then kanji sharing a reading, then same stroke count, then same JLPT level. */

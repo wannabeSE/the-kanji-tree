@@ -60,7 +60,7 @@ Space or Enter shows the answer. At the end: how many you remembered, how long i
 
 ## Quiz
 
-Five ways to poke at the same characters. None of them move your review dates.
+Four ways to poke at the same characters. None of them move your review dates.
 
 |                  | You are shown…                                  |
 | ---------------- | ----------------------------------------------- |
@@ -68,7 +68,6 @@ Five ways to poke at the same characters. None of them move your review dates.
 | **Reading**      | A character, and you pick the reading           |
 | **Word reading** | A real word, and you pick how it is read        |
 | **Okurigana**    | A kun reading split by a dot, like た**.**べる  |
-| **Stroke count** | A character, and you pick the number of strokes |
 
 The wrong answers are look-alikes: a sibling in the tree, a kanji with the same reading, or one with the same stroke count. Anything you miss links straight back into Explorer.
 
