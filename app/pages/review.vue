@@ -1,9 +1,7 @@
 <template>
   <div class="h-full overflow-y-auto">
     <main class="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-10">
-      <p v-if="loading" class="text-sm text-neutral-500">
-        Loading your reviews…
-      </p>
+      <SolvingOrb label="Preparing review " v-if="loading" />
       <p v-else-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>
 
       <section v-else-if="!queue.length" class="card space-y-3 text-center">

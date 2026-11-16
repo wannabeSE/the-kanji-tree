@@ -29,7 +29,7 @@
         </button>
       </div>
 
-      <p v-if="loading" class="text-sm text-neutral-500">Building questions…</p>
+      <SolvingOrb label="Building Quiz..." v-if="loading" />
       <p v-else-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>
       <p v-else-if="!mode" class="text-sm text-neutral-500">
         Pick a quiz type to start.
