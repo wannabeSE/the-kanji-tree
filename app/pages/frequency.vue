@@ -183,30 +183,35 @@
         {{ grade != null ? `in ${yearName(grade)}` : `in top ${maxFreq}` }}.
       </p>
 
-      <p v-else-if="!shown.length && pending" class="text-sm text-neutral-500">
+      <p
+        v-else-if="!shown.length && !outside.length && pending"
+        class="text-sm text-neutral-500"
+      >
         Loading…
       </p>
       <p
-        v-else-if="!shown.length && progress === 'mature' && hideKnown"
+        v-else-if="
+          !shown.length && !outside.length && progress === 'mature' && hideKnown
+        "
         class="text-sm text-neutral-500"
       >
         Hide known kanji is on, so Known cards stay out of this list.
       </p>
-      <p v-else-if="!shown.length && progress" class="text-sm text-neutral-500">
+      <p
+        v-else-if="!shown.length && !outside.length && progress"
+        class="text-sm text-neutral-500"
+      >
         No {{ STATUS_STYLE[progress].label }} kanji in this list.
-        <NuxtLink
-          v-if="hasProgressElsewhere"
-          to="/progress"
-          class="text-white underline"
-          >See them on Progress.</NuxtLink
-        >
       </p>
-      <p v-else-if="!shown.length" class="text-sm text-neutral-500">
+      <p
+        v-else-if="!shown.length && !outside.length"
+        class="text-sm text-neutral-500"
+      >
         You know every kanji in this list. Turn off “Hide known kanji” to see
         them.
       </p>
 
-      <ul v-else class="freq-grid">
+      <ul v-if="shown.length" class="freq-grid">
         <li v-for="item in shown" :key="item.kanji">
           <NuxtLink
             :to="{ path: '/', query: { root: item.kanji } }"
@@ -251,10 +256,53 @@
         </li>
       </ul>
 
-      <div v-if="items.length" class="flex flex-col items-center gap-3 pb-10">
+      <template v-if="progress && outside.length">
+        <p class="text-sm text-neutral-400">
+          Also {{ STATUS_STYLE[progress].label }}, outside this
+          {{
+            grade != null
+              ? yearName(grade)
+              : maxFreq != null
+                ? `top ${maxFreq}`
+                : "list"
+          }}.
+        </p>
+        <ul class="freq-grid">
+          <li v-for="item in outside" :key="item.kanji">
+            <NuxtLink
+              :to="{ path: '/', query: { root: item.kanji } }"
+              class="group relative flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#2c2c2e] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#3a3a3c] hover:ring-white/25"
+              :style="{
+                boxShadow: `inset 0 0 0 2px ${STATUS_STYLE[item.status].dark}`,
+              }"
+            >
+              <span
+                class="absolute top-1 left-1/2 -translate-x-1/2 rounded-full px-1.5 text-[9px] font-semibold uppercase tracking-wide text-neutral-900"
+                :style="{ backgroundColor: STATUS_STYLE[item.status].dark }"
+              >
+                {{ STATUS_STYLE[item.status].label }}
+              </span>
+              <span class="text-3xl leading-none text-white md:text-4xl">{{
+                item.kanji
+              }}</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </template>
+
+      <div
+        v-if="items.length || outside.length"
+        class="flex flex-col items-center gap-3 pb-10"
+      >
         <p class="text-xs tabular-nums text-neutral-500">
-          {{ items.length }} / {{ total }}{{ jlpt != null ? ` N${jlpt}` : "" }}
-          {{ grade != null ? `in ${yearName(grade)}` : `in top ${maxFreq}` }}
+          <template v-if="progress">
+            {{ statusTotal }} {{ STATUS_STYLE[progress].label }}
+          </template>
+          <template v-else>
+            {{ items.length }} / {{ total
+            }}{{ jlpt != null ? ` N${jlpt}` : "" }}
+            {{ grade != null ? `in ${yearName(grade)}` : `in top ${maxFreq}` }}
+          </template>
         </p>
         <button
           v-if="hasMore"
@@ -309,16 +357,12 @@ const hasMore = computed(() => items.value.length < total.value);
 const { loggedIn, statusOf, statuses } = useKanjiStatus();
 const hideKnown = ref(false);
 const progress = ref<KanjiStatus | null>(null);
-const hasProgressElsewhere = computed(() => {
+const statusTotal = computed(() => {
   const want = progress.value;
-  if (!want) return false;
-  return Object.values(statuses.value).some((status) => status === want);
+  if (!want) return 0;
+  return Object.values(statuses.value).filter((status) => status === want)
+    .length;
 });
-const narrowing = computed(
-  () =>
-    (hideKnown.value || progress.value != null) &&
-    !(hideKnown.value && progress.value === "mature"),
-);
 // ponytail: filters loaded pages only, so a page can show fewer than 20; push to /api/search if that bothers users.
 const shown = computed(() =>
   items.value
@@ -326,17 +370,45 @@ const shown = computed(() =>
     .filter((item) => !hideKnown.value || item.status !== "mature")
     .filter((item) => !progress.value || item.status === progress.value),
 );
-
-// These filters only remove kanji from pages already loaded, so keep reading
-// until a match appears or the list runs out.
-watch(shown, (list) => {
-  if (!narrowing.value || pending.value || list.length || !hasMore.value)
-    return;
-  const before = items.value.length;
-  fetchSlice(before, PAGE_SIZE, false).then(() => {
-    if (items.value.length === before) total.value = items.value.length;
-  });
+// Known on Progress counts every kanji. Ones outside the open rank or year
+// are not in `items`, so list them too once that list is complete.
+const outside = computed(() => {
+  const want = progress.value;
+  if (!want || hasMore.value) return [];
+  const present = new Set(items.value.map((item) => item.kanji));
+  return Object.entries(statuses.value)
+    .flatMap(([kanji, status]) =>
+      status === want && !present.has(kanji) ? [{ kanji, status }] : [],
+    )
+    .sort((a, b) => a.kanji.localeCompare(b.kanji, "ja"));
 });
+
+// A status filter has to read the whole open list, or a known kanji past
+// the first page never appears. Hiding known kanji only needs the next page.
+watch(
+  () =>
+    [
+      progress.value,
+      hideKnown.value,
+      items.value.length,
+      shown.value.length,
+    ] as const,
+  () => {
+    if (pending.value || !hasMore.value) return;
+    const fillStatus =
+      progress.value != null &&
+      !(hideKnown.value && progress.value === "mature");
+    const fillHide = hideKnown.value && !progress.value && !shown.value.length;
+    if (!fillStatus && !fillHide) return;
+    const before = items.value.length;
+    const limit = fillStatus
+      ? Math.max(total.value - before, PAGE_SIZE)
+      : PAGE_SIZE;
+    fetchSlice(before, limit, false).then(() => {
+      if (items.value.length === before) total.value = items.value.length;
+    });
+  },
+);
 
 async function fetchSlice(offset: number, limit: number, reset: boolean) {
   const id = ++requestId;
