@@ -20,22 +20,35 @@
         </p>
         <button
           type="button"
-          class="rounded-full px-2 py-1 text-xl leading-none text-neutral-400 hover:bg-white/10"
+          class="grid size-9 place-items-center rounded-full text-neutral-400 hover:bg-white/10"
           aria-label="Close search menu"
           @click="menuOpen = false"
         >
-          ×
+          <CloseIcon class="size-5" />
         </button>
       </div>
 
       <form class="space-y-2" @submit.prevent="onSearch">
-        <input
-          v-model="q"
-          type="search"
-          enterkeyhint="search"
-          placeholder="Kanji or reading"
-          class="w-full rounded-full bg-white/5 px-4 py-2 text-sm outline-none ring-1 ring-white/10 placeholder:text-neutral-500 focus:ring-white/25"
-        />
+        <div class="relative">
+          <input
+            ref="searchInput"
+            v-model="q"
+            type="search"
+            enterkeyhint="search"
+            placeholder="Kanji or reading"
+            class="w-full rounded-full bg-white/5 py-2 pl-4 text-sm outline-none ring-1 ring-white/10 placeholder:text-neutral-500 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+            :class="q ? 'pr-10' : 'pr-4'"
+          />
+          <button
+            v-if="q"
+            type="button"
+            class="absolute inset-y-0 right-1 grid w-8 place-items-center rounded-full text-neutral-400 hover:bg-white/10"
+            aria-label="Clear search"
+            @click="clearSearch"
+          >
+            <CloseIcon class="size-4" />
+          </button>
+        </div>
         <button
           type="submit"
           class="w-full rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-200 disabled:opacity-50"
@@ -181,11 +194,11 @@
         <div class="flex justify-end">
           <button
             type="button"
-            class="grid h-8 w-8 place-items-center rounded-full text-xl leading-none text-neutral-400 hover:bg-white/10"
+            class="grid h-9 w-9 place-items-center rounded-full text-neutral-400 hover:bg-white/10"
             aria-label="Close details"
             @click="panelOpen = false"
           >
-            ×
+            <CloseIcon class="size-5" />
           </button>
         </div>
 
@@ -391,6 +404,14 @@ const SEARCH_LIMIT = 24;
 const searchShown = computed(
   () => searchResults.value?.results?.slice(0, SEARCH_LIMIT) ?? [],
 );
+
+const searchInput = ref<HTMLInputElement | null>(null);
+
+function clearSearch() {
+  q.value = "";
+  activeReading.value = null;
+  searchInput.value?.focus();
+}
 
 function onSearch() {
   if (!q.value.trim()) return;
