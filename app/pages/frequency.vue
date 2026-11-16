@@ -20,66 +20,146 @@
           </p>
         </div>
 
-        <div class="flex flex-col items-start gap-2">
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="preset in RANGE_PRESETS"
-              :key="preset.max"
-              type="button"
-              class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
-              :class="
-                grade == null && maxFreq === preset.max
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'bg-white/10 text-neutral-400 hover:bg-white/15 hover:text-white'
-              "
-              @click="setRange(preset.max)"
+        <div class="flex flex-col items-start gap-4">
+          <div class="space-y-1.5">
+            <p
+              id="freq-rank-label"
+              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
             >
-              {{ preset.label }}
-            </button>
+              Rank range
+            </p>
+            <div
+              class="flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="freq-rank-label"
+            >
+              <button
+                v-for="preset in RANGE_PRESETS"
+                :key="preset.max"
+                type="button"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
+                :class="
+                  grade == null && maxFreq === preset.max
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'bg-white/10 text-neutral-400 hover:bg-white/15 hover:text-white'
+                "
+                @click="setRange(preset.max)"
+              >
+                {{ preset.label }}
+              </button>
+            </div>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="year in SCHOOL_YEARS"
-              :key="year"
-              type="button"
-              class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
-              :class="
-                grade === year
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'bg-white/10 text-neutral-400 hover:bg-white/15 hover:text-white'
-              "
-              @click="setGrade(year)"
+          <div class="space-y-1.5">
+            <p
+              id="freq-year-label"
+              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
             >
-              {{ year === 8 ? "Secondary" : `Year ${year}` }}
-            </button>
+              School year
+            </p>
+            <div
+              class="flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="freq-year-label"
+            >
+              <button
+                v-for="year in SCHOOL_YEARS"
+                :key="year"
+                type="button"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
+                :class="
+                  grade === year
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'bg-white/10 text-neutral-400 hover:bg-white/15 hover:text-white'
+                "
+                @click="setGrade(year)"
+              >
+                {{ year === 8 ? "Secondary" : `Year ${year}` }}
+              </button>
+            </div>
           </div>
-          <div class="flex w-fit flex-wrap gap-1 rounded-full bg-white/5 p-1">
-            <button
-              type="button"
-              class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
-              :class="
-                jlpt == null
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-400 hover:bg-white/10 hover:text-white'
-              "
-              @click="setJlpt(null)"
+          <div class="space-y-1.5">
+            <p
+              id="freq-jlpt-label"
+              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
             >
-              All
-            </button>
-            <button
-              v-for="level in JLPT_SCALE"
-              :key="level"
-              type="button"
-              class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
-              :class="
-                jlpt === level
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-400 hover:bg-white/10 hover:text-white'
-              "
-              @click="setJlpt(level)"
+              JLPT
+            </p>
+            <div
+              class="flex w-fit flex-wrap gap-1 rounded-full bg-white/5 p-1"
+              role="group"
+              aria-labelledby="freq-jlpt-label"
             >
-              N{{ level }}
-            </button>
+              <button
+                type="button"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
+                :class="
+                  jlpt == null
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-400 hover:bg-white/10 hover:text-white'
+                "
+                @click="setJlpt(null)"
+              >
+                All
+              </button>
+              <button
+                v-for="level in JLPT_SCALE"
+                :key="level"
+                type="button"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
+                :class="
+                  jlpt === level
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-400 hover:bg-white/10 hover:text-white'
+                "
+                @click="setJlpt(level)"
+              >
+                N{{ level }}
+              </button>
+            </div>
+          </div>
+          <div v-if="loggedIn" class="space-y-1.5">
+            <p
+              id="freq-progress-label"
+              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500"
+            >
+              Progress
+            </p>
+            <div
+              class="flex w-fit flex-wrap gap-1 rounded-full bg-white/5 p-1"
+              role="group"
+              aria-labelledby="freq-progress-label"
+            >
+              <button
+                type="button"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition"
+                :class="
+                  progress == null
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-400 hover:bg-white/10 hover:text-white'
+                "
+                @click="progress = null"
+              >
+                All
+              </button>
+              <button
+                v-for="status in STATUS_ORDER"
+                :key="status"
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition"
+                :class="
+                  progress === status
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-400 hover:bg-white/10 hover:text-white'
+                "
+                @click="progress = status"
+              >
+                <span
+                  class="size-2 rounded-full"
+                  :style="{ backgroundColor: STATUS_STYLE[status].dark }"
+                />
+                {{ STATUS_STYLE[status].label }}
+              </button>
+            </div>
           </div>
           <label
             v-if="loggedIn"
@@ -105,6 +185,21 @@
 
       <p v-else-if="!shown.length && pending" class="text-sm text-neutral-500">
         Loading…
+      </p>
+      <p
+        v-else-if="!shown.length && progress === 'mature' && hideKnown"
+        class="text-sm text-neutral-500"
+      >
+        Hide known kanji is on, so Known cards stay out of this list.
+      </p>
+      <p v-else-if="!shown.length && progress" class="text-sm text-neutral-500">
+        No {{ STATUS_STYLE[progress].label }} kanji in this list.
+        <NuxtLink
+          v-if="hasProgressElsewhere"
+          to="/progress"
+          class="text-white underline"
+          >See them on Progress.</NuxtLink
+        >
       </p>
       <p v-else-if="!shown.length" class="text-sm text-neutral-500">
         You know every kanji in this list. Turn off “Hide known kanji” to see
@@ -176,6 +271,7 @@
 </template>
 
 <script setup lang="ts">
+import { STATUS_ORDER, type KanjiStatus } from "#shared/utils/status";
 import { JLPT_SCALE, jlptColors, type JlptLevel } from "~/utils/jlpt";
 import { STATUS_STYLE } from "~/utils/status";
 
@@ -210,19 +306,31 @@ let requestId = 0;
 
 const hasMore = computed(() => items.value.length < total.value);
 
-const { loggedIn, statusOf } = useKanjiStatus();
+const { loggedIn, statusOf, statuses } = useKanjiStatus();
 const hideKnown = ref(false);
+const progress = ref<KanjiStatus | null>(null);
+const hasProgressElsewhere = computed(() => {
+  const want = progress.value;
+  if (!want) return false;
+  return Object.values(statuses.value).some((status) => status === want);
+});
+const narrowing = computed(
+  () =>
+    (hideKnown.value || progress.value != null) &&
+    !(hideKnown.value && progress.value === "mature"),
+);
 // ponytail: filters loaded pages only, so a page can show fewer than 20; push to /api/search if that bothers users.
 const shown = computed(() =>
   items.value
     .map((item) => ({ ...item, status: statusOf(item.kanji) }))
-    .filter((item) => !hideKnown.value || item.status !== "mature"),
+    .filter((item) => !hideKnown.value || item.status !== "mature")
+    .filter((item) => !progress.value || item.status === progress.value),
 );
 
-// Hiding known kanji only removes them from pages already loaded, so keep
-// reading until an unknown one appears or the list runs out.
+// These filters only remove kanji from pages already loaded, so keep reading
+// until a match appears or the list runs out.
 watch(shown, (list) => {
-  if (!hideKnown.value || pending.value || list.length || !hasMore.value)
+  if (!narrowing.value || pending.value || list.length || !hasMore.value)
     return;
   const before = items.value.length;
   fetchSlice(before, PAGE_SIZE, false).then(() => {
