@@ -175,15 +175,28 @@
                 : "Lesson finished"
           }}
         </h2>
-        <p v-if="added.length" class="text-4xl" lang="ja">
-          {{ added.join(" ") }}
-        </p>
+        <ul v-if="added.length" class="flex flex-wrap gap-2">
+          <li v-for="kanji in added" :key="kanji">
+            <NuxtLink
+              :to="{ path: '/', query: { root: kanji } }"
+              class="grid size-16 place-items-center rounded-2xl bg-white/5 text-4xl ring-1 ring-white/10 transition hover:bg-white/10"
+              :aria-label="`Open ${kanji} in the tree`"
+              lang="ja"
+            >
+              {{ kanji }}
+            </NuxtLink>
+          </li>
+        </ul>
         <p v-if="saveError" role="alert" class="text-sm text-red-400">
           {{ saveError }}
         </p>
         <p v-if="!saving && added.length" class="text-sm text-neutral-400">
-          Review them now while they are fresh. Each one comes back as a meaning
-          card and a reading card.
+          These are Learning now. Tap one to open it in the tree. The whole set
+          stays on
+          <NuxtLink to="/progress" class="text-white underline"
+            >Progress</NuxtLink
+          >, and each one comes back in Review as a meaning card and a reading
+          card.
         </p>
         <div class="flex gap-2">
           <NuxtLink

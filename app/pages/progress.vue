@@ -46,6 +46,41 @@
           Review today to keep the streak.
         </p>
 
+        <section v-if="startedGroups.length" class="card space-y-4">
+          <div class="space-y-1">
+            <h2 class="eyebrow">Just started</h2>
+            <p class="text-sm text-neutral-400">
+              Kanji from your lessons that are still New or Learning. Tap one
+              to open it in the tree.
+            </p>
+          </div>
+          <div
+            v-for="group in startedGroups"
+            :key="group.status"
+            class="space-y-2"
+          >
+            <p class="flex items-center gap-2 text-xs text-neutral-400">
+              <span
+                class="size-2 rounded-full"
+                :style="{ backgroundColor: STATUS_STYLE[group.status].dark }"
+              />
+              {{ STATUS_STYLE[group.status].label }}
+            </p>
+            <ul class="flex flex-wrap gap-2">
+              <li v-for="kanji in group.kanji" :key="kanji">
+                <NuxtLink
+                  :to="{ path: '/', query: { root: kanji } }"
+                  class="grid size-14 place-items-center rounded-2xl bg-white/5 text-3xl ring-1 ring-white/10 transition hover:bg-white/10"
+                  :aria-label="`Open ${kanji} in the tree`"
+                  lang="ja"
+                >
+                  {{ kanji }}
+                </NuxtLink>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <section class="card space-y-4">
           <h2 class="eyebrow">Goal</h2>
           <form
@@ -259,7 +294,9 @@
 </template>
 
 <script setup lang="ts">
+import type { KanjiStatus } from "#shared/utils/status";
 import { JLPT_SCALE } from "~/utils/jlpt";
+import { STATUS_STYLE } from "~/utils/status";
 import type { StatusTally } from "~/components/StatusBar.vue";
 
 definePageMeta({ middleware: "auth" });
@@ -293,6 +330,18 @@ const {
   error,
   refresh,
 } = await useFetch<Summary>("/api/me/summary");
+
+const { statuses } = useKanjiStatus();
+const STARTED: KanjiStatus[] = ["learning", "new"];
+const startedGroups = computed(() =>
+  STARTED.map((status) => ({
+    status,
+    kanji: Object.entries(statuses.value)
+      .filter(([, item]) => item === status)
+      .map(([kanji]) => kanji)
+      .sort((a, b) => a.localeCompare(b, "ja")),
+  })).filter((group) => group.kanji.length),
+);
 
 const tiles = computed(() => {
   const s = summary.value;
