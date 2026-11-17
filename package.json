@@ -9,7 +9,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "build:kanji-graph": "tsx scripts/build-kanji-graph.ts",
-    "build:freq": "tsx scripts/build-freq.ts"
+    "build:freq": "tsx scripts/build-freq.ts",
+    "build:vocab": "tsx scripts/build-vocab.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
