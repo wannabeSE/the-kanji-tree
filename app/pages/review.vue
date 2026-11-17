@@ -187,7 +187,7 @@
         <div v-if="unlocked.length" class="card space-y-2">
           <h2 class="eyebrow">Words you can now read</h2>
           <p class="text-xs text-neutral-500">
-            Common words built only from kanji you are reviewing.
+            JLPT words from the list built only from kanji you are reviewing.
           </p>
           <ul class="space-y-1">
             <li

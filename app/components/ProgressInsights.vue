@@ -62,8 +62,8 @@
     <section class="card space-y-3">
       <h2 class="eyebrow">Words you can read</h2>
       <p class="text-xs leading-relaxed text-neutral-500">
-        Common words made only of kanji you have passed at least once (young or
-        known), from your {{ vocab?.basedOn.length ?? 0 }} most recent kanji.
+        JLPT words from the list made only of kanji you have passed at least
+        once (young or known).
       </p>
       <p v-if="loading(vocabStatus)" class="text-sm text-neutral-500">
         Loading…

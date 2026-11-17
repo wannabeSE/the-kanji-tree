@@ -217,20 +217,26 @@
           >
             Words with this kanji
           </h2>
-          <p class="text-xs leading-relaxed text-neutral-500">
-            Common words that contain this kanji, with reading and meaning.
-          </p>
           <ul class="space-y-2">
             <li
               v-for="word in wordsForSelection"
               :key="word.written + word.pronounced"
               class="border-b border-white/10 pb-2 last:border-b-0"
             >
-              <p class="flex flex-wrap items-baseline gap-x-2">
+              <p class="flex items-center gap-x-2">
                 <span class="text-lg text-white">{{ word.written }}</span>
-                <span class="text-sm text-neutral-400">{{
+                <span class="min-w-0 text-sm text-neutral-400">{{
                   word.pronounced
                 }}</span>
+                <span
+                  v-if="word.jlpt"
+                  class="ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none"
+                  :style="{
+                    backgroundColor: jlptColors(word.jlpt)?.bg,
+                    color: jlptColors(word.jlpt)?.fg,
+                  }"
+                  >N{{ word.jlpt }}</span
+                >
               </p>
               <p class="text-xs leading-relaxed text-neutral-400">
                 {{ word.meaning }}
@@ -318,7 +324,12 @@ type SelectedKanji = KanjiCardData & {
   toChildren?: KanjiFormulaProps[];
 };
 
-type CommonWord = { written: string; pronounced: string; meaning: string };
+type CommonWord = {
+  written: string;
+  pronounced: string;
+  meaning: string;
+  jlpt: number | null;
+};
 type WordsPayload = { kanji: string; words: CommonWord[] };
 
 useHead({
