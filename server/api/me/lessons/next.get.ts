@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     picks.map(async (kanji) => ({
       kanji,
       entry: await fetchKanjiEntry(kanji),
-      words: (await fetchCommonWords(kanji).catch(() => [])).slice(0, 3),
+      words: (await wordsForKanji(kanji)).slice(0, 3),
       mnemonic: notes.get(kanji) ?? "",
     })),
   );

@@ -50,13 +50,13 @@ export async function fetchKanjiEntry(
 }
 
 /**
- * Most common dictionary words containing the kanji.
- * Upstream payloads are 200-600 KB; only the trimmed list is cached.
- * Throws instead of returning [] so an upstream outage isn't cached for a week.
+ * Up to 8 common dictionary words containing the kanji.
+ * Used when the JLPT list has none. Upstream payloads are 200-600 KB;
+ * only the trimmed list is cached. Throws on an outage so a failure is not cached.
  */
 export async function fetchCommonWords(char: string): Promise<CommonWord[]> {
   const storage = useStorage("cache");
-  const cacheKey = `words:v3:${char}`;
+  const cacheKey = `words:v4:${char}`;
   if (await storage.hasItem(cacheKey))
     return (await storage.getItem<{ words: CommonWord[] }>(cacheKey))!.words;
 
@@ -93,7 +93,5 @@ export async function fetchReading(
 
 /** Warms the cache for upcoming cards so a session never waits on kanjiapi.dev. */
 export async function prefetchKanji(chars: string[]) {
-  await Promise.allSettled(
-    chars.flatMap((c) => [fetchKanjiEntry(c), fetchCommonWords(c)]),
-  );
+  await Promise.allSettled(chars.map((c) => fetchKanjiEntry(c)));
 }

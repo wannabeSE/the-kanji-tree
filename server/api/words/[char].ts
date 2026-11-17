@@ -3,5 +3,5 @@ export default defineEventHandler(async (event) => {
   if ([...char].length !== 1)
     throw createError({ statusCode: 400, statusMessage: "Invalid character" });
 
-  return { kanji: char, words: await fetchCommonWords(char) };
+  return { kanji: char, words: await wordsForKanji(char) };
 });

@@ -27,6 +27,9 @@ export default defineEventHandler(async (event) => {
     await Promise.all(sample.map((k) => fetchKanjiEntry(k)))
   ).filter((e): e is KanjiEntry => e != null);
 
+  if (mode === "word")
+    await Promise.all(entries.map((entry) => wordsForKanji(entry.kanji)));
+
   const questions: Question[] = [];
   for (const entry of entries) {
     if (questions.length >= count) break;
@@ -70,7 +73,7 @@ async function build(
 
   if (mode === "word") {
     const stems = readingStems(entry);
-    const words = shuffle(await fetchCommonWords(kanji)).filter(
+    const words = shuffle(await wordsForKanji(kanji)).filter(
       (w) => [...w.written].length > 1,
     );
     for (const word of words) {

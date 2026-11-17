@@ -1,7 +1,7 @@
 /**
- * Common words whose every kanji the user has passed (young or mature).
- * ?kanji=木林 limits the search to words containing those characters;
- * by default it uses the 40 most recently reviewed passed kanji.
+ * JLPT words whose every kanji the user has passed (young or mature).
+ * Kana-only words are included. ?kanji=木林 limits the list to words
+ * containing those characters.
  */
 export default defineEventHandler(async (event) => {
   const userId = meId(event);
@@ -13,26 +13,22 @@ export default defineEventHandler(async (event) => {
   );
 
   const query = getQuery(event).kanji;
-  // ponytail: words are fetched per kanji (8 most common each); 40 keeps a cold cache under a few seconds.
-  const basedOn =
+  const restrict =
     typeof query === "string" && query
-      ? [...new Set(query.normalize("NFC"))]
-          .filter((k) => passed.has(k))
-          .slice(0, 40)
-      : await recentKanji(userId, statuses, ["young", "mature"], 40);
+      ? new Set([...query.normalize("NFC")].filter((k) => passed.has(k)))
+      : null;
 
-  const lists = await Promise.all(
-    basedOn.map((k) => fetchCommonWords(k).catch(() => [])),
-  );
   const seen = new Set<string>();
-  const words = lists.flat().filter((word) => {
+  const words = allVocabWords().filter((word) => {
     const key = `${word.written}|${word.pronounced}`;
     if (seen.has(key)) return false;
+    const chars = [...word.written];
+    if (restrict && !chars.some((c) => restrict.has(c))) return false;
+    if (!chars.every((c) => !/\p{Script=Han}/u.test(c) || passed.has(c)))
+      return false;
     seen.add(key);
-    return [...word.written].every(
-      (c) => !/\p{Script=Han}/u.test(c) || passed.has(c),
-    );
+    return true;
   });
 
-  return { words, basedOn };
+  return { words, basedOn: restrict ? [...restrict] : [...passed] };
 });
