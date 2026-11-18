@@ -31,7 +31,7 @@
 
       <SolvingOrb label="Building Quiz..." v-if="loading" />
       <p v-else-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>
-      <p v-else-if="!mode" class="text-sm text-neutral-500">
+      <p v-else-if="!mode" class="text-shimmer text-sm">
         Pick a quiz type to start.
       </p>
       <p v-else-if="!questions.length" class="text-sm text-neutral-500">
