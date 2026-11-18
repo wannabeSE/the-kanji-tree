@@ -10,7 +10,7 @@
         </p>
       </div>
 
-      <p v-if="loading" class="text-sm text-neutral-500">
+      <p v-if="loading" class="text-shimmer text-sm">
         Picking your next kanji…
       </p>
       <p v-else-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>
@@ -166,7 +166,10 @@
       </template>
 
       <section v-else-if="step === 'done'" class="card space-y-3">
-        <h2 class="text-2xl font-semibold">
+        <h2
+          class="text-2xl font-semibold"
+          :class="saving ? 'text-shimmer' : undefined"
+        >
           {{
             saving
               ? "Saving your lesson…"

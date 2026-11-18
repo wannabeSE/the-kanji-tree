@@ -56,7 +56,7 @@
           </button>
 
           <div v-else class="space-y-4 text-left">
-            <p v-if="!entry" class="text-sm text-neutral-500">
+            <p v-if="!entry" class="text-shimmer text-sm">
               Loading details…
             </p>
             <template v-else-if="current.facet === 'meaning'">

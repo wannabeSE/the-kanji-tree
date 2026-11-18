@@ -8,7 +8,7 @@
       role="img"
       :aria-label="LABEL"
     />
-    <p class="text-sm text-neutral-500" aria-hidden="true">{{ LABEL }}</p>
+    <p class="text-shimmer text-sm" aria-hidden="true">{{ LABEL }}</p>
   </div>
 </template>
 
