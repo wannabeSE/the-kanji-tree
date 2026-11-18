@@ -189,7 +189,7 @@
         aria-hidden="true"
       />
       <div
-        class="space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        class="space-y-4 overflow-y-auto overscroll-contain p-5"
       >
         <div class="flex justify-end">
           <button

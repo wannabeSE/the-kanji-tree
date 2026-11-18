@@ -4,48 +4,10 @@
   >
     <NuxtLink
       to="/"
-      class="hidden text-sm font-semibold tracking-tight text-white lg:block"
+      class="text-sm font-semibold tracking-tight text-white md:hidden lg:block"
     >
       Kanji Tree
     </NuxtLink>
-    <details ref="navMenu" class="relative md:hidden">
-      <summary
-        class="flex cursor-pointer list-none items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 [&::-webkit-details-marker]:hidden"
-        aria-label="Open navigation menu"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          class="size-4 text-neutral-400"
-          aria-hidden="true"
-        >
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        </svg>
-        {{ activeLabel }}
-      </summary>
-      <nav
-        class="absolute left-0 z-50 mt-2 w-56 space-y-1 rounded-2xl border border-white/10 bg-[#2c2c2e] p-2 text-sm shadow-xl"
-      >
-        <NuxtLink
-          v-for="item in NAV"
-          :key="item.to"
-          :to="item.to"
-          class="block rounded-lg px-2 py-2 font-medium"
-          :class="
-            active === item.to
-              ? 'bg-white/10 text-white'
-              : 'text-neutral-300 hover:bg-white/10 hover:text-white'
-          "
-          @click="closeMenus()"
-        >
-          {{ item.label }}
-        </NuxtLink>
-      </nav>
-    </details>
     <nav
       class="hidden min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-white/5 p-1 text-sm [scrollbar-width:none] md:flex"
     >
@@ -135,36 +97,15 @@
 </template>
 
 <script setup lang="ts">
-const NAV = [
-  { to: "/", label: "Explorer" },
-  { to: "/frequency", label: "Common kanji" },
-  { to: "/learn", label: "Learn" },
-  { to: "/review", label: "Review" },
-  { to: "/quiz", label: "Quiz" },
-  { to: "/progress", label: "Progress" },
-] as const;
-
-const route = useRoute();
+const { NAV, active } = useNav();
 const { rootLabel, menuOpen } = useExplorerHeader();
 const { loggedIn, user, fetch: fetchSession } = useUserSession();
 const { refresh: refreshStatuses } = useKanjiStatus();
-const navMenu = ref<HTMLDetailsElement | null>(null);
 const accountMenu = ref<HTMLDetailsElement | null>(null);
 
-const active = computed(() =>
-  route.path === "/"
-    ? "/"
-    : (NAV.find((item) => item.to !== "/" && route.path.startsWith(item.to))
-        ?.to ?? null),
-);
-const activeLabel = computed(
-  () => NAV.find((item) => item.to === active.value)?.label ?? "Menu",
-);
-
 function closeMenus(except?: Node) {
-  for (const menu of [navMenu.value, accountMenu.value]) {
-    if (menu && !(except && menu.contains(except))) menu.open = false;
-  }
+  const menu = accountMenu.value;
+  if (menu && !(except && menu.contains(except))) menu.open = false;
 }
 
 function onPointerDown(event: PointerEvent) {
